@@ -13,24 +13,24 @@ void processInput(){
 
     while(getline(cin,input)){
         sscanf(input,"%s",optype);
-        switch(optype){
-            case "reg":
-                if(scanf("%s %s",UID,password)==2){
-                    sprintf(stringout, "REG %s %s\n",UID,password);
-                    sendUDP(stringout);
+        if (strcmp(optype, "reg") == 0){
+            if(scanf("%s %s",UID,password)==2){
+                sprintf(stringout, "REG %s %s\n",UID,password);
+                sendUDP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
                 }
-                else{
-                    fprintf(stderr,"Error: wrong input format\n");
+        }
+        else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
+            if(scanf("%s %s",UID,password)==2){
+                sprintf(stringout, "UNR %s %s\n",UID,password);
+                sendUDP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
                 }
-            case "unregister":
-                case "unr":
-                    if(scanf("%s %s",UID,password)==2){
-                            sprintf(stringout, "UNR %s %s\n",UID,password);
-                            sendUDP(stringout);
-                    }
-                    else{
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
+        }
             case "login":
                 if(scanf("%s %s",UID,password)==2){
                         sprintf(stringout, "LOG %s %s\n",UID,password);
