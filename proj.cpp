@@ -31,72 +31,79 @@ void processInput(){
                 fprintf(stderr,"Error: wrong input format\n");
                 }
         }
-            case "login":
-                if(scanf("%s %s",UID,password)==2){
-                        sprintf(stringout, "LOG %s %s\n",UID,password);
-                        sendUDP(stringout);
-                        login = true;
-                }
-                else{
-                    fprintf(stderr,"Error: wrong input format\n");
-                }
-            case "logout":
-                stringout = "OUT"
+        else if (strcmp(optype, "login") == 0){
+            if(scanf("%s %s",UID,password)==2){
+                sprintf(stringout, "LOG %s %s\n",UID,password);
                 sendUDP(stringout);
-                login = false;
-            case "exit":
-                //closeTCP
-            case "groups":
-                case "gl":
-                    stringout = "GLS"
-                    sendUDP(stringout);
-            case "ulist":
-                case "ul":
-                    if(scanf("%s",GID)==1){
-                        sprintf(stringout, "ULS %s\n",GID);
-                        sendTCP(stringout);
-                    }
-                    else{
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
-            case "subscribe":
-                case "s":
-                    if(scanf("%s %s",GID,GName)==2){
-                            sprintf(stringout, "GSR %s %s %s\n",UID,GID,GName);
-                            sendUDP(stringout);
-                    }
-                    else{
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
-            case "unsubscribe":
-                case "u":
-                    if(scanf("%s",GID)==1){
-                            sprintf(stringout, "GUR %s %s\n",UID,GID);
-                            sendUDP(stringout);
-                    }
-                    else{
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
-            case "my_groups":
-                case "mgl":
-                    sprintf(stringout, "GLM %s\n",UID);
-                    sendUDP(stringout);
-            case "select":   
-                case "sag":
-                    if(scanf("%s",GID)!=1){
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
-            case "post":
-                string text, Fname;
-                if(scanf("%s %s",text,Fname)==2){
-                        sprintf(stringout, "PST %s %s %d %s %d %s\n",UID,GID,strlen(text),text,,FILE);
-                        sendUDP(stringout);
-                    }
-                    else{
-                        fprintf(stderr,"Error: wrong input format\n");
-                    }
-            case "retrieve":
-            case "r":
+                login = true;
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if (strcmp(optype, "logout") == 0){
+            stringout = "OUT"
+            sendUDP(stringout);
+            login = false;
+        }
+        else if (strcmp(optype, "exit") == 0){
+            //closeTCP
+        }
+        else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
+            stringout = "GLS"
+            sendUDP(stringout);
+        }
+        else if ((strcmp(optype, "ulist") == 0) || (strcmp(optype, "ul") == 0)){
+            if(scanf("%s",GID)==1){
+                sprintf(stringout, "ULS %s\n",GID);
+                sendTCP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if ((strcmp(optype, "subscribe") == 0) || (strcmp(optype, "s") == 0)){
+            if(scanf("%s %s",GID,GName)==2){
+                sprintf(stringout, "GSR %s %s %s\n",UID,GID,GName);
+                sendUDP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if ((strcmp(optype, "unsubscribe") == 0) || (strcmp(optype, "u") == 0)){
+            if(scanf("%s",GID)==1){
+                sprintf(stringout, "GUR %s %s\n",UID,GID);
+                sendUDP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if ((strcmp(optype, "my_groups") == 0) || (strcmp(optype, "mgl") == 0)){
+            sprintf(stringout, "GLM %s\n",UID);
+            sendUDP(stringout);
+        }
+        else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){    
+            if(scanf("%s",GID)!=1){
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if (strcmp(optype, "post") == 0){
+            string text, Fname;
+            if(scanf("%s %s",text,Fname)==2){
+                sprintf(stringout, "PST %s %s %d %s %d %s\n",UID,GID,strlen(text),text,,FILE);
+                sendUDP(stringout);
+            }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+            }
+        }
+        else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
+            // do stuff
+        }
+        else { /* default case */
+            fprintf(stderr, "Error: wrong input format\n");
         }
     }
 
