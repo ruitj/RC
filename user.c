@@ -1,11 +1,8 @@
 #include <string.h>
 #include <stdio.h>
-#define PORT_DEFAULT "58033"
-#define MAX_PORT_SIZE 6
-#define MAX_INPUT_SIZE 280
-#define MAX_UID_SIZE 6
-#define MAX_PASS_SIZE 9
-#define MAX_OPTYPE_SIZE 11
+#include <UDP_Client.h>
+#include <TCP_Client.h>
+#include <func_Client.h>
 
 char port[MAX_PORT_SIZE], IP[20], savedUID[MAX_UID_SIZE];
 bool login=false;
