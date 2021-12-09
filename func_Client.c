@@ -1,12 +1,15 @@
-#include <Client.h>
-#include <UDP_Client.h>
-#include <TCP_Client.h>
+#include "Client.h"
+#include "UDP_Client.h"
+#include "TCP_Client.h"
+#include <string.h>
+#include <stdio.h>
 
 int registerUser(char *UID, char *password){
-    char in[], *out;
+    char in[20], *out;
     int status;
     sprintf(in, "REG %s %s\n", UID, password);
-    status = sendUDP(in, &out);
+    out = sendUDP(in);
+    printf(out);
     if (status){
         return 1;
     }
@@ -20,7 +23,7 @@ int registerUser(char *UID, char *password){
         printf("Warning: User already registered\n");
     }
     else{
-        printf("Warning: wrong message format\n")
+        printf("Warning: wrong message format\n");
     }
     return 0;
 }

@@ -1,20 +1,25 @@
 #include <string.h>
 #include <stdio.h>
-#include <Client.h>
-#include <UDP_Client.h>
-#include <TCP_Client.h>
-#include <func_Client.h>
+#include "Client.h"
+#include "UDP_Client.h"
+#include "TCP_Client.h"
+#include "func_Client.h"
 
-char port[MAX_PORT_SIZE], IP[20], savedUID[MAX_UID_SIZE];
-bool login=false;
+char port[MAX_PORT_SIZE], IP[24], savedUID[MAX_UID_SIZE];
+int login=0;
  
 void processInput(){
     char input[MAX_INPUT_SIZE], optype[MAX_OPTYPE_SIZE];
-    int i;
+    int i = 0;
 
     while (fgets(input, MAX_INPUT_SIZE, stdin)){
-        for (i = 0; strcmp(input[i], " ") != 0; i++)
+        while(strcmp(&input[i]," ")!=0){
             optype[i] = input[i];
+            printf("%c", optype[1]);
+            i++;
+        }
+        //optype[i] = "\0"
+        
         if (strcmp(optype, "reg") == 0){
             char UID[MAX_UID_SIZE], password[MAX_PASS_SIZE];
             if (sscanf(&input[4],"%s %s",UID,password)==2){
@@ -22,6 +27,7 @@ void processInput(){
                     fprintf(stderr, "Error: UDP connection failure\n");
             }
         }
+        /*
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
             string UID, password;
             if(scanf("%s %s",UID,password)==2){
@@ -37,7 +43,7 @@ void processInput(){
             if(scanf("%s %s",UID,password)==2){
                 sprintf(stringout, "LOG %s %s\n",UID,password);
                 //sendUDP(stringout);
-                login = true;
+                login = 1;
                 savedUID = UID;
             }
             else{
@@ -47,7 +53,7 @@ void processInput(){
         else if (strcmp(optype, "logout") == 0){
             stringout = "OUT";
             //sendUDP(stringout);
-            login = false;
+            login = 0;
             savedUID = NULL;
         }
         else if (strcmp(optype, "exit") == 0){
@@ -110,41 +116,41 @@ void processInput(){
         else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
             // do stuff
         }
-        else { /* default case */
+        else { *//* default case *//*
             fprintf(stderr, "Error: wrong input format\n");
-        }
+        }*/
     }
 
 }
-
+/*
 int parseArgs(int n, char **args){
     if(n > 1){
             if(strcmp(args[1],"-n") == 0){
-                IP = args[2];
+                IP = &args[2];
                 if((n == 5) && (strcmp(args[3],"-p") == 0)){
-                    port = args[4];
+                    port = &args[4];
                 }
                 else{
                     fprintf(stderr,"Error: invalid arguments\n");
-                    exit(EXIT_FAILURE);
+                    exit(1);
                 }
             }
             else if(strcmp(args[1],"-p") == 0){
-                port = args[2];
+                port = *args[2];
             }
             else{
                     fprintf(stderr,"Error: invalid arguments\n");
                     exit(EXIT_FAILURE);
             }
     }
-}
+}*/
 
 int main(int argc, char**argv){
 
     //input parsing
     //parseArgs(argc, argv)
-    IP = "tejo.tecnico.ulisboa.pt"
-    port = PORT_DEFAULT
+    strcpy(IP,"tejo.tecnico.ulisboa.pt");
+    strcpy(port,PORT_DEFAULT);
 
     initUDP(IP, port);
 

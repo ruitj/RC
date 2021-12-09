@@ -5,7 +5,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <Client.h>
+#include "Client.h"
+#include <string.h>
 
 int fd, errcode;
 ssize_t n;
@@ -16,7 +17,7 @@ char buffer[128];
 
 void initUDP(char IP[], char port[]){
     fd=socket(AF_INET, SOCK_DGRAM, 0);
-    if (FD==-1) exit(1);
+    if (fd==-1) exit(1);
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
@@ -26,7 +27,7 @@ void initUDP(char IP[], char port[]){
     if (errcode!=0) exit(1);
 }
 char *sendUDP(char *msg){
-    n=sendto(fd, msg, len(msg), 0, res->ai_addr, res->ai_addrlen);
+    n=sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
     if (n==-1) /*error*/ exit(1);
     addrlen=sizeof(addr);
     n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
