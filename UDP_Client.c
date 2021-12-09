@@ -25,6 +25,14 @@ void initUDP(char IP[], char port[]){
     errcode=getaddrinfo(IP, port, &hints, &res);
     if (errcode!=0) exit(1);
 }
+char *sendUDP(char *msg){
+    n=sendto(fd, msg, len(msg), 0, res->ai_addr, res->ai_addrlen);
+    if (n==-1) /*error*/ exit(1);
+    addrlen=sizeof(addr);
+    n=recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    if (n==-1) /*error*/ exit(1);
+    return buffer;
+}
 
 void closeUDP(){
     freeaddrinfo(res);

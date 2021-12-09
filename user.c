@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <Client.h>
 #include <UDP_Client.h>
 #include <TCP_Client.h>
 #include <func_Client.h>
@@ -8,7 +9,7 @@ char port[MAX_PORT_SIZE], IP[20], savedUID[MAX_UID_SIZE];
 bool login=false;
  
 void processInput(){
-    char input[MAX_INPUT_SIZE], optype[MAX_OPTYPE_SIZE], stringout;
+    char input[MAX_INPUT_SIZE], optype[MAX_OPTYPE_SIZE];
     int i;
 
     while(fgets(input, MAX_INPUT_SIZE, stdin)){
@@ -121,32 +122,38 @@ void processInput(){
 
 }
 
-int main(int argc, char**argv){
-    port = portDefault;
-    IP = getaddrinfo();
-    //input parsing
-    if(argc > 1){
-        if(strcmp(argv[1],"-n") == 0){
-            IP = argv[2];
-            if((argc == 5) && (strcmp(argv[3],"-p") == 0)){
-                port = argv[4];
+int parseArgs(int n, char **args){
+    if(n > 1){
+            if(strcmp(args[1],"-n") == 0){
+                IP = args[2];
+                if((n == 5) && (strcmp(args[3],"-p") == 0)){
+                    port = args[4];
+                }
+                else{
+                    fprintf(stderr,"Error: invalid arguments\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else if(strcmp(args[1],"-p") == 0){
+                port = args[2];
             }
             else{
-                fprintf(stderr,"Error: invalid arguments\n");
-                exit(EXIT_FAILURE);
+                    fprintf(stderr,"Error: invalid arguments\n");
+                    exit(EXIT_FAILURE);
             }
-        }
-        else if(strcmp(argv[1],"-p") == 0){
-            port = argv[2];
-        }
-        else{
-                fprintf(stderr,"Error: invalid arguments\n");
-                exit(EXIT_FAILURE);
-        }
     }
+}
+
+int main(int argc, char**argv){
+
+    //input parsing
+    //parseArgs(argc, argv)
+    IP = "tejo.tecnico.ulisboa.pt"
+    port = PORT_DEFAULT
+
+    initUDP(IP, port);
 
     processInput();
-
 
     return 0;
 }
