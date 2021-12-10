@@ -13,13 +13,11 @@ void processInput(){
     int i = 0;
 
     while (fgets(input, MAX_INPUT_SIZE, stdin)){
-        while(strcmp(&input[i]," ")!=0){
+        while(input[i] != ' '){
             optype[i] = input[i];
-            printf("%c", optype[1]);
             i++;
         }
-        //optype[i] = "\0"
-        
+        printf("%s\n",optype);
         if (strcmp(optype, "reg") == 0){
             char UID[MAX_UID_SIZE], password[MAX_PASS_SIZE];
             if (sscanf(&input[4],"%s %s",UID,password)==2){
