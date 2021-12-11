@@ -17,26 +17,18 @@ void processInput(){
             optype[i] = input[i];
             i++;
         }
-        printf("%s\n",optype);
         if (strcmp(optype, "reg") == 0){
-            char UID[MAX_UID_SIZE], password[MAX_PASS_SIZE];
-            if (sscanf(&input[4],"%s %s",UID,password)==2){
-                if (registerUser(UID, password))
-                    fprintf(stderr, "Error: UDP connection failure\n");
+            if (registerUser(&input[i+1]) == 0){
+                //erro
             }
         }
-        /*
+        
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
-            string UID, password;
-            if(scanf("%s %s",UID,password)==2){
-                sprintf(stringout, "UNR %s %s\n",UID,password);
-                //sendUDP(stringout);
-            }
-            else{
+            if(unregisterUser(&input[i+1]) == 0){
                 fprintf(stderr,"Error: wrong input format\n");
-                }
+            }
         }
-        else if (strcmp(optype, "login") == 0){
+        /*else if (strcmp(optype, "login") == 0){
             string UID, password;
             if(scanf("%s %s",UID,password)==2){
                 sprintf(stringout, "LOG %s %s\n",UID,password);

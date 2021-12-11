@@ -2,7 +2,7 @@
 #define FUNCC_H
 
 
-int registerUser(char *userID, char *password);
+int registerUser(char *input);
 //int unregisterUser(char *userID);
 //int login(char *userID, char *password);
 //int logout(char *userID);
