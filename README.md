@@ -1,2 +1,2 @@
 # RC
-g++ -std=c++11 -O3 -Wall file.cpp -lm
+gcc func_Client.c TCP_Client.c UDP_Client.c user.c -o user
