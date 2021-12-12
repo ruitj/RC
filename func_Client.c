@@ -5,13 +5,31 @@
 #include <string.h>
 #include <stdio.h>
 
+int validUID(char *input){
+    int i;
+    for (i = 0; input[i] != ' ';i++){
+        if (!((isdigit(input[i])) || (i < 5)))
+            return 0;
+    }
+    return 1;
+}
+
+int validPassword(char *input){
+    int i;
+    for (i = 0; input[i] != '\n';i++){
+        if (!(((isdigit(input[i])) || (isalpha(input[i]))) || (i < 8)))
+            return 0;
+    }
+    return 1;
+}
+
 int registerUser(char *input){
-    char in[20], *out;
-    int i=0;
-    int espacosCount=0, espacoIndex=0;
+    char in[MAX_INPUT_SIZE], *out;
+    //int i=0;
+    //int spacesCount=0, spaceIndex=0;
     //int status;
     //verificacao do input (ver se tem 1 espaco, exatamente 14 carateres, UID so integers e 5 carateres e password com 8 carateres, letras e numeros)
-    for(i;input[i]!='\n';i++){
+    /*for(i;input[i]!='\n';i++){
         if (input[i] == ' '){
             espacosCount++;
             espacoIndex = i;
@@ -42,21 +60,31 @@ int registerUser(char *input){
         printf("Error: wrong input format\n");
         return 0;
         //print erro
+    }*/
+
+    if (!validUID(input)){
+        printf("Warning: Invalid UID\n");
+        return 0;
+    }
+    if (!((input[5] == ' ') && (input[6] != ' '))){
+        printf("Warning: Invalid input format\n");
+        return 0;
+    }
+    if (!validPassword(&input[6])){
+        printf("Warning: Invalid password\n");
+        return 0;
     }
 
-    sprintf(in, "REG %s\n", input);
+    sprintf(in, "REG %s", input);
     out = sendUDP(in);
-    //printf(out);
-    /*if (status){
-        return 1;
-    }*/
-    if (strcmp(out, "RRG OK\n") != 0){
+
+    if (strcmp(out, "RRG OK\n") == 0){
         printf("User successfully registered\n");
     }
-    else if (strcmp(out, "RRG NOK\n") != 0){
+    else if (strcmp(out, "RRG NOK\n") == 0){
         printf("Warning: User not registered\n");
     }
-    else if (strcmp(out, "RRG DUP\n") != 0){
+    else if (strcmp(out, "RRG DUP\n") == 0){
         printf("Warning: User already registered\n");
     }
     else{

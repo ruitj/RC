@@ -1,39 +1,50 @@
 #include <string.h>
 #include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "Client.h"
 #include "UDP_Client.h"
 #include "TCP_Client.h"
 #include "func_Client.h"
 
-char port[MAX_PORT_SIZE], IP[24], savedUID[MAX_UID_SIZE];
+char port[MAX_PORT_SIZE], *IP, savedUID[MAX_UID_SIZE];
 int login=0;
  
 void processInput(){
     char input[MAX_INPUT_SIZE], optype[MAX_OPTYPE_SIZE];
-    int i = 0;
 
     while (fgets(input, MAX_INPUT_SIZE, stdin)){
-        while(input[i] != ' '){
+        int i = 0;
+        while (input[i] != ' '){
             optype[i] = input[i];
             i++;
         }
+        optype[i] = '\0';
         if (strcmp(optype, "reg") == 0){
-            if (registerUser(&input[i+1]) == 0){
-                //erro
-            }
+            registerUser(&input[i+1]); // funcao recebe comando sem o optype
         }
-        
+        /*
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
-            if(unregisterUser(&input[i+1]) == 0){
-                fprintf(stderr,"Error: wrong input format\n");
+            string UID, password;
+            if(scanf("%s %s",UID,password)==2){
+                sprintf(stringout, "UNR %s %s\n",UID,password);
+                //sendUDP(stringout);
             }
+            else{
+                fprintf(stderr,"Error: wrong input format\n");
+                }
         }
-        /*else if (strcmp(optype, "login") == 0){
+        else if (strcmp(optype, "login") == 0){
             string UID, password;
             if(scanf("%s %s",UID,password)==2){
                 sprintf(stringout, "LOG %s %s\n",UID,password);
                 //sendUDP(stringout);
-                login = 1;
+                login = true;
                 savedUID = UID;
             }
             else{
@@ -43,12 +54,13 @@ void processInput(){
         else if (strcmp(optype, "logout") == 0){
             stringout = "OUT";
             //sendUDP(stringout);
-            login = 0;
+            login = false;
             savedUID = NULL;
-        }
-        else if (strcmp(optype, "exit") == 0){
-            //closeTCP
-        }
+        }*/
+        if (strcmp(optype, "exit") == 0){
+            closeUDP();
+            return;
+        }/*
         else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
             stringout = "GLS";
             //sendUDP(stringout);
@@ -112,26 +124,25 @@ void processInput(){
     }
 
 }
-/*
-int parseArgs(int n, char **args){
+
+/*int parseArgs(int n, char **args){
     if(n > 1){
-            if(strcmp(args[1],"-n") == 0){
-                IP = &args[2];
-                if((n == 5) && (strcmp(args[3],"-p") == 0)){
-                    port = &args[4];
-                }
-                else{
-                    fprintf(stderr,"Error: invalid arguments\n");
-                    exit(1);
-                }
-            }
-            else if(strcmp(args[1],"-p") == 0){
-                port = *args[2];
+        if(strcmp(args[1],"-n") == 0){
+            IP = args[2];
+            if((n == 5) && (strcmp(args[3],"-p") == 0)){
+                port = args[4];
             }
             else{
-                    fprintf(stderr,"Error: invalid arguments\n");
-                    exit(EXIT_FAILURE);
+                fprintf(stderr,"Error: invalid arguments\n");
+                exit(EXIT_FAILURE);
             }
+        }
+        else if(strcmp(args[1],"-p") == 0){
+            port = args[2];
+        }
+        else{
+            fprintf(stderr,"Error: invalid arguments\n");
+        }
     }
 }*/
 
@@ -139,10 +150,13 @@ int main(int argc, char**argv){
 
     //input parsing
     //parseArgs(argc, argv)
-    strcpy(IP,"tejo.tecnico.ulisboa.pt");
-    strcpy(port,PORT_DEFAULT);
+    struct hostent *host_entry;
+    char hostbuffer[256];
+    //gethostname(hostbuffer, sizeof(hostbuffer));
+    //printf("%s\n", hostbuffer);
+    strcpy(port,"58011");
 
-    initUDP(IP, port);
+    initUDP("tejo.tecnico.ulisboa.pt", port);
 
     processInput();
 
