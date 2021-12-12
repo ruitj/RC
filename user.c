@@ -57,7 +57,7 @@ void processInput(){
             login = false;
             savedUID = NULL;
         }*/
-        if (strcmp(optype, "exit") == 0){
+        else if (strcmp(optype, "exit") == 0){
             closeUDP();
             return;
         }/*
