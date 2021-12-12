@@ -27,19 +27,11 @@ void processInput(){
         }
         optype[i] = '\0';
         if (strcmp(optype, "reg") == 0){
-            registerUser(&input[i+1]); // funcao recebe comando sem o optype
+            registerUser(&input[i+1]);
         }
-        /*
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
-            string UID, password;
-            if(scanf("%s %s",UID,password)==2){
-                sprintf(stringout, "UNR %s %s\n",UID,password);
-                //sendUDP(stringout);
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-                }
-        }
+            unregisterUser(&input[i+1]);
+        }/*
         else if (strcmp(optype, "login") == 0){
             string UID, password;
             if(scanf("%s %s",UID,password)==2){
@@ -59,7 +51,7 @@ void processInput(){
             savedUID = NULL;
         }*/
         else if (strcmp(optype, "exit") == 0){
-            closeUDP();
+            exitSession();
             break;
         }/*
         else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){

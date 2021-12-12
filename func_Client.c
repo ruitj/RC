@@ -25,20 +25,20 @@ int validPassword(char *input){
     return 1;
 }
 
-int registerUser(char *input){
+void registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
 
     if (!validUID(input)){
         printf("Warning: Invalid UID\n");
-        return 0;
+        return;
     }
     if (!((input[5] == ' ') && (input[6] != ' '))){
         printf("Warning: Invalid input format\n");
-        return 0;
+        return;
     }
     if (!validPassword(&input[6])){
         printf("Warning: Invalid password\n");
-        return 0;
+        return;
     }
 
     sprintf(in, "REG %s", input);
@@ -56,5 +56,38 @@ int registerUser(char *input){
     else{
         printf("Warning: wrong message format\n");
     }
-    return 0;
+}
+
+void unregisterUser(char *input){
+    char in[MAX_INPUT_SIZE], *out;
+
+    if (!validUID(input)){
+        printf("Warning: Invalid UID\n");
+        return;
+    }
+    if (!((input[5] == ' ') && (input[6] != ' '))){
+        printf("Warning: Invalid input format\n");
+        return;
+    }
+    if (!validPassword(&input[6])){
+        printf("Warning: Invalid password\n");
+        return;
+    }
+
+    sprintf(in, "UNR %s", input);
+    out = sendUDP(in);
+
+    if (strcmp(out, "RUN OK\n") == 0){
+        printf("User successfully unregistered\n");
+    }
+    else if (strcmp(out, "RUN NOK\n") == 0){
+        printf("Warning: User does not exist\n");
+    }
+    else{
+        printf("Warning: wrong message format\n");
+    }
+}
+
+void exitSession(){
+    closeUDP();
 }
