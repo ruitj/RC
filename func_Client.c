@@ -17,7 +17,7 @@ int validUID(char *input){
 int validPassword(char *input){
     int i;
     if (strlen(input) != 9)
-        return =;
+        return 0;
     for (i = 0; input[i] != '\n';i++){
         if (!(((isdigit(input[i])) || (isalpha(input[i]))) || (i < 8)))
             return 0;
@@ -27,7 +27,7 @@ int validPassword(char *input){
 
 int registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
-    
+
     if (!validUID(input)){
         printf("Warning: Invalid UID\n");
         return 0;

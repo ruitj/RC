@@ -16,11 +16,12 @@ char port[MAX_PORT_SIZE], *IP, savedUID[MAX_UID_SIZE];
 int login=0;
  
 void processInput(){
-    char input[MAX_INPUT_SIZE], optype[MAX_OPTYPE_SIZE];
+    char input[MAX_INPUT_SIZE];
 
-    while (fgets(input, MAX_INPUT_SIZE, stdin)){
+    while (fgets(input, sizeof(input)/sizeof(char), stdin)){
+        char optype[MAX_OPTYPE_SIZE];
         int i = 0;
-        while (input[i] != ' '){
+        while ((input[i] != ' ') && (input[i] != '\n')){
             optype[i] = input[i];
             i++;
         }
@@ -59,7 +60,7 @@ void processInput(){
         }*/
         else if (strcmp(optype, "exit") == 0){
             closeUDP();
-            return;
+            break;
         }/*
         else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
             stringout = "GLS";
