@@ -387,7 +387,9 @@ void showMyGroups(){
 
 }
 
-//void initSession()
+void initSession(char *host, char * port){
+    initUDP(host, port);
+}
 
 void exitSession(){
     closeUDP();

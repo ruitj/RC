@@ -8,8 +8,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "Client.h"
-#include "UDP_Client.h"
-#include "TCP_Client.h"
 #include "func_Client.h"
 
 char port[MAX_PORT_SIZE], *hostName;
@@ -91,7 +89,7 @@ int main(int argc, char**argv){
     //printf("%s\n", hostbuffer);
     strcpy(port,"58011");
 
-    initUDP("tejo.tecnico.ulisboa.pt", port);
+    initSession("tejo.tecnico.ulisboa.pt", port);
 
     processInput();
 

@@ -11,4 +11,6 @@ void showAvailableGroups();
 void subscribeGroup(char *input);
 void unsubscribeGroup(char *input);
 void showMyGroups();
+void initSession(char *host, char *port);
+void exitSession();
 /* headers das funcoes/operacoes do user */
