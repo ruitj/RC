@@ -12,7 +12,7 @@
 #include "TCP_Client.h"
 #include "func_Client.h"
 
-char port[MAX_PORT_SIZE], *IP;
+char port[MAX_PORT_SIZE], *hostName;
 
 void processInput(){
     char input[MAX_INPUT_SIZE];
@@ -40,12 +40,11 @@ void processInput(){
         else if (strcmp(optype, "exit") == 0){
             exitSession();
             break;
-        }/*
-        else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
-            stringout = "GLS";
-            //sendUDP(stringout);
         }
-        else if ((strcmp(optype, "ulist") == 0) || (strcmp(optype, "ul") == 0)){
+        else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
+            showAvailableGroups();
+        }
+        /*else if ((strcmp(optype, "ulist") == 0) || (strcmp(optype, "ul") == 0)){
             string GID;
             if(scanf("%s",GID)==1){
                 sprintf(stringout, "ULS %s\n",GID);
@@ -130,8 +129,8 @@ int main(int argc, char**argv){
 
     //input parsing
     //parseArgs(argc, argv)
-    struct hostent *host_entry;
-    char hostbuffer[256];
+    //struct hostent *host_entry;
+    //char hostbuffer[256];
     //gethostname(hostbuffer, sizeof(hostbuffer));
     //printf("%s\n", hostbuffer);
     strcpy(port,"58011");
@@ -142,3 +141,5 @@ int main(int argc, char**argv){
 
     return 0;
 }
+
+//gcc -O3 -Wall UDP_Client.c TCP_Client.c func_Client.c user.c -lm -o user

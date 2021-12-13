@@ -14,7 +14,7 @@ ssize_t n;
 socklen_t addrlen;
 struct addrinfo hints, *res;
 struct sockaddr_in addr;
-char buffer[MAX_INPUT_SIZE];
+char buffer[MAX_OUTPUT_SIZE];
 char HOST[256], PORT[10]; 
 
 void initUDP(char hostName[], char port[]){
@@ -36,7 +36,7 @@ char *sendUDP(char *msg){
     n=sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
     if (n==-1) /*error*/ exit(1);
     addrlen=sizeof(addr);
-    n=recvfrom(fd, (char *)buffer, MAX_INPUT_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
+    n=recvfrom(fd, (char *)buffer, MAX_OUTPUT_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
     if (n==-1) /*error*/ exit(1);
     buffer[n] = '\0';
     return buffer;

@@ -168,6 +168,16 @@ void logoutUser(){
 
 }
 
+void showAvailableGroups(){
+    char in[MAX_INPUT_SIZE], *out;
+
+    sprintf(in, "GLS\n");
+    out = sendUDP(in);
+
+    printf("%s", out);
+    
+}
+
 void exitSession(){
     closeUDP();
 }
