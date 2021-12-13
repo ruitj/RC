@@ -2,8 +2,8 @@ int validUID(char *input);
 int validPassword(char *input);
 void registerUser(char *input);
 void unregisterUser(char *input);
-/*int login(char *userID, char *password);
-int logout(char *userID);*/
+void loginUser(char *input);
+void logoutUser();
 void exitSession();
-/*int showGroups();*/
+//int showGroups();
 /* headers das funcoes/operacoes do user */

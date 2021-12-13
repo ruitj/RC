@@ -12,9 +12,8 @@
 #include "TCP_Client.h"
 #include "func_Client.h"
 
-char port[MAX_PORT_SIZE], *IP, savedUID[MAX_UID_SIZE];
-int login=0;
- 
+char port[MAX_PORT_SIZE], *IP;
+
 void processInput(){
     char input[MAX_INPUT_SIZE];
 
@@ -31,25 +30,13 @@ void processInput(){
         }
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
             unregisterUser(&input[i+1]);
-        }/*
+        }
         else if (strcmp(optype, "login") == 0){
-            string UID, password;
-            if(scanf("%s %s",UID,password)==2){
-                sprintf(stringout, "LOG %s %s\n",UID,password);
-                //sendUDP(stringout);
-                login = true;
-                savedUID = UID;
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-            }
+            loginUser(&input[i+1]);
         }
         else if (strcmp(optype, "logout") == 0){
-            stringout = "OUT";
-            //sendUDP(stringout);
-            login = false;
-            savedUID = NULL;
-        }*/
+            logoutUser(&input[i+1]);
+        }
         else if (strcmp(optype, "exit") == 0){
             exitSession();
             break;
