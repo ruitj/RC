@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 char savedUID[MAX_UID_SIZE], savedPass[MAX_PASS_SIZE];
 int loggedin = 0;
@@ -174,8 +175,31 @@ void showAvailableGroups(){
     sprintf(in, "GLS\n");
     out = sendUDP(in);
 
-    printf("%s", out);
-    
+    if (strcmp(out, "RGL 0\n") == 0){
+        printf("No groups available\n");
+        return;
+    }
+
+    char Groups[3];
+    int i = 4;
+    int j = 0;
+    while (out[i] != ' '){
+        Groups[j] = out[i];
+        i++; j++;
+    }
+    Groups[j] = '\0';
+
+    printf("Available groups:\n");
+
+    int nGroups = atoi(Groups);
+    char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE], MID[MAX_MID_SIZE];
+    i += 1;
+    for (int n = 0; n < nGroups; n++){
+        sscanf(&out[i], "%s %s %s", GID, GName, MID);
+        i += strlen(GID) + strlen(GName) + strlen(MID) + 3;
+        printf("Group ID: %s\t\tGroup Name: %-24s\t\tLatest MID: %s\n", GID, GName, MID);
+    }
+
 }
 
 void exitSession(){
