@@ -44,62 +44,18 @@ void processInput(){
         else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
             showAvailableGroups();
         }
-        /*else if ((strcmp(optype, "ulist") == 0) || (strcmp(optype, "ul") == 0)){
-            string GID;
-            if(scanf("%s",GID)==1){
-                sprintf(stringout, "ULS %s\n",GID);
-                //sendTCP(stringout);
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-            }
-        }
         else if ((strcmp(optype, "subscribe") == 0) || (strcmp(optype, "s") == 0)){
-            string GID, GName;
-            if(scanf("%s %s",GID,GName)==2){
-                sprintf(stringout, "GSR %s %s %s\n",savedUID,GID,GName);
-                //sendUDP(stringout);
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-            }
+            subscribeGroup(&input[i+1]);
         }
         else if ((strcmp(optype, "unsubscribe") == 0) || (strcmp(optype, "u") == 0)){
-            string GID;
-            if(scanf("%s",GID)==1){
-                sprintf(stringout, "GUR %s %s\n",savedUID,GID);
-                //sendUDP(stringout);
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-            }
+            unsubscribeGroup(&input[i+1]);
         }
         else if ((strcmp(optype, "my_groups") == 0) || (strcmp(optype, "mgl") == 0)){
-            sprintf(stringout, "GLM %s\n",savedUID);
-            //sendUDP(stringout);
+            showMyGroups();
         }
-        else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
-            string GID;
-            if(scanf("%s",GID)!=1){
-                fprintf(stderr,"Error: wrong input format\n");
-            }
+        else { /* default case */
+            printf("Error: invalid operation: %s\n", optype);
         }
-        else if (strcmp(optype, "post") == 0){
-            string text, Fname;
-            if(scanf("%s %s",text,Fname)==2){
-                //sprintf(stringout, "PST %s %s %d %s %d %s\n",savedUID,GID,strlen(text),text,,FILE);
-                //sendUDP(stringout);
-            }
-            else{
-                fprintf(stderr,"Error: wrong input format\n");
-            }
-        }
-        else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
-            // do stuff
-        }
-        else { *//* default case *//*
-            fprintf(stderr, "Error: wrong input format\n");
-        }*/
     }
 
 }
