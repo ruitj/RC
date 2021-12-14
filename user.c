@@ -51,6 +51,9 @@ void processInput(){
         else if ((strcmp(optype, "my_groups") == 0) || (strcmp(optype, "mgl") == 0)){
             showMyGroups();
         }
+        else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
+            selectGroup(&input[i+1]);
+        }
         else { /* default case */
             printf("Error: invalid operation: %s\n", optype);
         }

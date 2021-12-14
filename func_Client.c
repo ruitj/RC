@@ -7,7 +7,8 @@
 #include <stdlib.h>
 
 char savedUID[MAX_UID_SIZE], savedPass[MAX_PASS_SIZE];
-int loggedin = 0;
+char savedGID[MAX_GID_SIZE];
+int loggedin = 0, GIDSelected = 0;
 
 int validUID(char *input){
     for (int i = 0; ((input[i] != ' ') && (input[i] != '\n'));i++){
@@ -146,18 +147,7 @@ void loginUser(char *input){
     }
 
     // save credentials (UID and Password)
-    int i, j;
-    for (i = 0, j = 0; i < 5; i++){
-        savedUID[j] = input[i];
-        j++;
-    }
-    savedUID[j] = '\0';
-    
-    for (i += 1, j = 0; i < 14; i++){
-        savedPass[j] = input[i];
-        j++;
-    }
-    savedPass[j] = '\0';
+    sscanf(input, "%s %s", savedUID, savedPass);
     loggedin = 1;
 
 }
@@ -207,25 +197,17 @@ void showAvailableGroups(){
     }
 
     char Groups[3];
-    int i = 4;
-    int j = 0;
-    while (out[i] != ' '){
-        Groups[j] = out[i];
-        i++; j++;
-    }
-    Groups[j] = '\0';
-
-    printf("Available groups:\n");
+    sscanf(&out[4], "%s", Groups);
 
     int nGroups = atoi(Groups);
     char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE], MID[MAX_MID_SIZE];
-    i += 1;
-    for (int n = 0; n < nGroups; n++){
+    
+    printf("Available groups:\n");
+    for (int n = 0, i = 6; n < nGroups; n++){
         sscanf(&out[i], "%s %s %s", GID, GName, MID);
         i += strlen(GID) + strlen(GName) + strlen(MID) + 3;
         printf("Group ID: %s\t\tGroup Name: %-24s\t\tLatest MID: %s\n", GID, GName, MID);
     }
-
 }
 
 void subscribeGroup(char *input){
@@ -263,43 +245,37 @@ void subscribeGroup(char *input){
 
     sprintf(in, "GSR %s %s %s\n", savedUID, GID, GName);
     out = sendUDP(in);
-    
-    char out_msg[12];
-    int j;
 
-    for (j = 0; (!isdigit(out[j]) && (out[j] != '\n')); j++){
-        out_msg[j] = out[j];
-    }
-    
-    if (out_msg[j-1] == ' ')
-        out_msg[j-1] = '\0';
-
-    if (strcmp(out_msg, "RGS NEW") == 0){
-        sscanf(&out[j], "%s", GID);
-        printf("New group created and subscribed: %s %s\n", GID, GName);
-    }
-    else if (strcmp(out, "RGS OK\n") == 0){
-        sscanf(&out[j], "%s", GID);
-        printf("New group subscribed: %s %s\n", GID, GName);
-    }
-    else if (strcmp(out, "RGS NOK\n") == 0){
-        printf("Invalid credentials\n");
-    }
-    else if (strcmp(out, "RGS E_USR\n") == 0){
-        printf("Invalid user ID\n");
-    }
-    else if (strcmp(out, "RGS E_GRP\n") == 0){
-        printf("Invalid group ID\n");
-    }
-    else if (strcmp(out, "RGS E_GNAME\n") == 0){
-        printf("Invalid group name\n");
-    }
-    else if (strcmp(out, "RGS E_FULL\n") == 0){
-        printf("Maximum number of groups achieved\n");
-    }
-    else if (strcmp(out, "ERR\n") == 0){
+    if (strcmp(out, "ERR\n") == 0){
         printf("Error: Invalid message format\n");
         return;
+    }
+    
+    char status[8];
+    sscanf(&out[4], "%s", status);
+
+    if (strcmp(status, "NEW") == 0){
+        sscanf(&out[8], "%s", GID);
+        printf("New group created and subscribed: %s - \"%s\"\n", GID, GName);
+    }
+    else if (strcmp(status, "OK") == 0){
+        sscanf(&out[7], "%s", GID);
+        printf("New group subscribed: %s - \"%s\"\n", GID, GName);
+    }
+    else if (strcmp(status, "NOK") == 0){
+        printf("Invalid credentials\n");
+    }
+    else if (strcmp(status, "E_USR") == 0){
+        printf("Invalid user ID\n");
+    }
+    else if (strcmp(status, "E_GRP") == 0){
+        printf("Invalid group ID\n");
+    }
+    else if (strcmp(status, "E_GNAME") == 0){
+        printf("Invalid group name\n");
+    }
+    else if (strcmp(status, "E_FULL") == 0){
+        printf("Maximum number of groups achieved\n");
     }
 
 }
@@ -366,24 +342,34 @@ void showMyGroups(){
     }
 
     char Groups[3];
-    int i = 4;
-    int j = 0;
-    while (out[i] != ' '){
-        Groups[j] = out[i];
-        i++; j++;
-    }
-    Groups[j] = '\0';
-
-    printf("Available groups:\n");
+    sscanf(&out[4], "%s", Groups);
 
     int nGroups = atoi(Groups);
     char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE], MID[MAX_MID_SIZE];
-    i += 1;
-    for (int n = 0; n < nGroups; n++){
+    
+    printf("Subscribed groups:\n");
+    for (int n = 0, i = 6; n < nGroups; n++){
         sscanf(&out[i], "%s %s %s", GID, GName, MID);
         i += strlen(GID) + strlen(GName) + strlen(MID) + 3;
         printf("Group ID: %s\t\tGroup Name: %-24s\t\tLatest MID: %s\n", GID, GName, MID);
     }
+
+}
+
+void selectGroup(char *input){
+
+    if (!loggedin){
+        printf("Error: User not logged in\n");
+        return;
+    }
+    else if (!validGID(input)){
+        printf("Error: Invalid input format\n");
+        return;
+    }
+
+    sscanf(input, "%s", savedGID);
+    GIDSelected = 1;
+    printf("Group %s is now the active group\n", savedGID);
 
 }
 
