@@ -177,6 +177,8 @@ void logoutUser(){
     // forget credentials (UID and Password)
     savedUID[0] = '\0';
     savedPass[0] = '\0';
+    savedGID[0] = '\0';
+    GIDSelected = 0;
     loggedin = 0;
 
 }
@@ -208,6 +210,7 @@ void showAvailableGroups(){
         i += strlen(GID) + strlen(GName) + strlen(MID) + 3;
         printf("Group ID: %s\t\tGroup Name: %-24s\t\tLatest MID: %s\n", GID, GName, MID);
     }
+
 }
 
 void subscribeGroup(char *input){
@@ -373,10 +376,25 @@ void selectGroup(char *input){
 
 }
 
-void initSession(char *host, char * port){
+/*
+void post(char *input){
+    sendTCP(input);
+    while (1){
+        char *buffer = readTCP(input);
+        printf("%s", buffer);
+        if(strlen(buffer) == MAX_OUTPUT_SIZE-1)
+            break;
+    }
+    closeFD();
+}
+*/
+
+void initSession(char *host, char *port){
     initUDP(host, port);
+    //initTCP(host, port);
 }
 
 void exitSession(){
     closeUDP();
+    //closeTCP();
 }
