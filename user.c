@@ -54,11 +54,13 @@ void processInput(){
         else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
             selectGroup(&input[i+1]);
         }
-        else { /* default case */
+        else if ( strcmp(optype,"ulist")==0 || strcmp(optype,"ul")==0 ){
+           listUsers_GID();
+        }
+        else{ /* default case */
             printf("Error: invalid operation: %s\n", optype);
         }
     }
-
 }
 
 /*int parseArgs(int n, char **args){

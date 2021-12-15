@@ -113,7 +113,7 @@ void unregisterUser(char *input){
 
 void loginUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
-
+    
     if (loggedin){
         printf("Error: User already logged in\n");
         return;
@@ -134,7 +134,7 @@ void loginUser(char *input){
 
     sprintf(in, "LOG %s", input);
     out = sendUDP(in);
-
+    
     if (strcmp(out, "RLO OK\n") == 0){
         printf("You are now logged in\n");
     }
@@ -376,6 +376,14 @@ void selectGroup(char *input){
 
 }
 
+void listUsers_GID(){
+    char in[MAX_INPUT_SIZE], *out,g_name[4],users[MAX_OUTPUT_SIZE];
+    sprintf(in, "ULS %s\n", savedGID);
+    out = sendTCP(in);
+    sscanf(&out[6],"%s %[^\n]%*c",g_name,users);
+    printf("Group name:%s\n Subscribed users:%s\n",g_name,users);
+}
+
 /*
 void post(char *input){
     sendTCP(input);
@@ -391,10 +399,10 @@ void post(char *input){
 
 void initSession(char *host, char *port){
     initUDP(host, port);
-    //initTCP(host, port);
+    initTCP(host, port);
 }
 
 void exitSession(){
     closeUDP();
-    //closeTCP();
+    closeTCP();
 }

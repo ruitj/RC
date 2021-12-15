@@ -9,25 +9,26 @@
 #include <stdio.h>
 #include "Client.h"
 
-int fd, errcode;
+int fd_tcp, errcode;
 ssize_t n;
 socklen_t addrlen;
 struct addrinfo hints, *res;
 struct sockaddr_in addr;
 char buffer[MAX_OUTPUT_SIZE];
 char HOST[256], PORT[10]; 
+char saved_buffer[MAX_OUTPUT_SIZE];
 
 void initTCP(char hostName[], char port[]){
-    fd=socket(AF_INET, SOCK_STREAM, 0);
-    if (fd==-1) exit(1);
+    fd_tcp=socket(AF_INET, SOCK_STREAM, 0);
+   // printf("%d\n",fd_tcp);
+    if (fd_tcp==-1) exit(1);
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     strcpy(HOST, hostName);
     strcpy(PORT, port);
-    
-    errcode=getaddrinfo(HOST, PORT, &hints, &res);
+    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt", PORT_DEFAULT, &hints, &res);
     if (errcode!=0) exit(1);
 
 }
@@ -39,26 +40,43 @@ void initTCP(char hostName[], char port[]){
  * read/recvfrom colocam '\0' no buffer passado como arg??
  */
 char *sendTCP(char *msg){
-    n=connect(fd, res->ai_addr, res->ai_addrlen);
+    n=connect(fd_tcp, res->ai_addr, res->ai_addrlen);
     if(n==-1) exit(1);
-    n=write(fd, msg, strlen(msg));
+    int buffer_number=0,ptr=0;
+    n=write(fd_tcp,msg, strlen(msg));
     if(n==-1) exit(1);
 
     while (1){
-        n=read(fd, buffer, MAX_OUTPUT_SIZE-1);
+        n=read(fd_tcp, buffer, MAX_OUTPUT_SIZE-1);
         if(n==-1)
             exit(1);
         buffer[n] = '\0';
-        printf("%s", buffer);
-        if(strlen(buffer) != MAX_OUTPUT_SIZE-1)
-            break;
+        buffer_number++;
+        //printf("%ld\n",strlen(buffer));
+        if(strlen(buffer) != MAX_OUTPUT_SIZE-1 && strlen(buffer)==0 ){
+            saved_buffer[ptr]='\0';
+          break;
+        }
+        else{
+            //printf("buffer_number=%d\n",buffer_number);
+            //printf("%s",buffer);
+            for(int i=0;i<strlen(buffer);i++){
+                saved_buffer[ptr]=buffer[i];
+                ptr+=1;
+            }
+            saved_buffer[ptr]=' ';
+            
+        }
     }
-    close(fd);
-    return buffer;
+    //printf("ptr=%d\n",ptr);
+    //printf("%s",saved_buffer);
+    close(fd_tcp);
+    
+    return saved_buffer;
 }
 
 void closeTCP(){
     freeaddrinfo(res);
-    close(fd);
+    close(fd_tcp);
 }
 

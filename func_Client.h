@@ -7,6 +7,7 @@ void unregisterUser(char *input);
 void loginUser(char *input);
 void logoutUser();
 void exitSession();
+void listUsers_GID();
 void showAvailableGroups();
 void subscribeGroup(char *input);
 void unsubscribeGroup(char *input);
