@@ -35,16 +35,15 @@ void initUDP(char hostName[], char port[]){
 
 char *sendUDP(char *msg){
     n=sendto(fd_udp, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
-   // puts("out");
     if (n==-1){ 
-       // exit(1);
+       exit(1);
     }
     addrlen=sizeof(addr);
+    
     n=recvfrom(fd_udp, (char *)buffer, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr, &addrlen);
     if (n==-1){  
         exit(1);
     }
-   // puts("out");
     buffer[n] = '\0';
     return buffer;
 }

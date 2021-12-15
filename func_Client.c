@@ -133,6 +133,7 @@ void loginUser(char *input){
     }
 
     sprintf(in, "LOG %s", input);
+    
     out = sendUDP(in);
     
     if (strcmp(out, "RLO OK\n") == 0){

@@ -30,6 +30,7 @@ void processInput(){
             unregisterUser(&input[i+1]);
         }
         else if (strcmp(optype, "login") == 0){
+            
             loginUser(&input[i+1]);
         }
         else if (strcmp(optype, "logout") == 0){
