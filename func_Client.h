@@ -15,6 +15,8 @@ void showMyGroups();
 void selectGroup(char *input);
 void showGIDSelected();
 void listUsers_GID();
+void postMessage(char *input);
+void retrieveMessages(char *input);
 void initSession(char *hostName, char *port);
 void exitSession();
 /* headers das funcoes/operacoes do user */

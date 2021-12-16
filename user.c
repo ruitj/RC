@@ -65,6 +65,12 @@ void processInput(){
            initTCP("tejo.tecnico.ulisboa.pt", port);
            listUsers_GID();
         }
+        else if (strcmp(optype, "post") == 0){
+            retrieveMessages(&input[i+1]);
+        }
+        else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
+            retrieveMessages(&input[i+1]);
+        }
         else{ /* default case */
             printf("Error: invalid operation: %s\n", optype);
         }

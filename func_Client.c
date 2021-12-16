@@ -413,7 +413,7 @@ void listUsers_GID(){
     printf("Group name:");
 
     while (1){
-        out = readTCP(MAX_OUTPUT_SIZE-1);
+        out = readTCP(MAX_OUTTCP_SIZE-1);
         printf("%s", out);
         int size = strlen(out);
         if (out[size-1] == '\n')
@@ -422,18 +422,13 @@ void listUsers_GID(){
     closeTCP();
 }
 
-/*
-void post(char *input){
-    sendTCP(input);
-    while (1){
-        char *buffer = readTCP(input);
-        printf("%s", buffer);
-        if(strlen(buffer) == MAX_OUTPUT_SIZE-1)
-            break;
-    }
-    closeFD();
+void postMessage(char *input){
+    return;
 }
-*/
+
+void retrieveMessages(char *input){
+    return;
+}
 
 void initSession(char *hostName, char *port){
     initUDP(hostName, port);

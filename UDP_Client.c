@@ -14,7 +14,7 @@ ssize_t n_udp;
 socklen_t addrlen_udp;
 struct addrinfo hints_udp, *res_udp;
 struct sockaddr_in addr_udp;
-char buffer_udp[MAX_OUTPUT_SIZE];
+char buffer_udp[MAX_OUTUDP_SIZE];
 
 void initUDP(char hostName[], char port[]){
     fd_udp=socket(AF_INET, SOCK_DGRAM, 0);
@@ -35,7 +35,7 @@ char *sendUDP(char *msg){
     if (n_udp==-1) exit(1);
     addrlen_udp=sizeof(addr_udp);
     
-    n_udp=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
+    n_udp=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTUDP_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
     
     if (n_udp==-1) exit(1);
     buffer_udp[n_udp] = '\0';
