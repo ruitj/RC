@@ -59,6 +59,7 @@ void processInput(){
             selectGroup(&input[i+1]);
         }
         else if ( strcmp(optype,"ulist")==0 || strcmp(optype,"ul")==0 ){
+           initTCP("tejo.tecnico.ulisboa.pt","58011");
            listUsers_GID();
            closeTCP();
            initTCP("tejo.tecnico.ulisboa.pt","58011");

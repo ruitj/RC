@@ -402,10 +402,10 @@ void post(char *input){
 
 void initSession(char *host, char *port){
     initUDP(host, port);
-    initTCP(host, port);
+   // initTCP(host, port);
 }
 
 void exitSession(){
     closeUDP();
-    closeTCP();
+   // closeTCP();
 }
