@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <signal.h>
 #include <stdio.h>
 #include "Client.h"
 
@@ -19,6 +20,7 @@ char HOST[256], PORT[10];
 char saved_buffer[MAX_OUTPUT_SIZE];
 
 void initTCP(char hostName[], char port[]){
+    signal(SIGPIPE,SIG_IGN);
     fd_tcp=socket(AF_INET, SOCK_STREAM, 0);
    // printf("%d\n",fd_tcp);
     if (fd_tcp==-1) exit(1);
@@ -40,9 +42,12 @@ void initTCP(char hostName[], char port[]){
  * read/recvfrom colocam '\0' no buffer passado como arg??
  */
 char *sendTCP(char *msg){
+    signal(SIGPIPE,SIG_IGN);
     n=connect(fd_tcp, res->ai_addr, res->ai_addrlen);
+   // puts("response");
     if(n==-1) exit(1);
     int buffer_number=0,ptr=0;
+    //puts("response");
     n=write(fd_tcp,msg, strlen(msg));
     if(n==-1) exit(1);
 

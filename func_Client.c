@@ -380,7 +380,9 @@ void selectGroup(char *input){
 void listUsers_GID(){
     char in[MAX_INPUT_SIZE], *out,g_name[4],users[MAX_OUTPUT_SIZE];
     sprintf(in, "ULS %s\n", savedGID);
+    
     out = sendTCP(in);
+    
     sscanf(&out[6],"%s %[^\n]%*c",g_name,users);
     printf("Group name:%s\n Subscribed users:%s\n",g_name,users);
 }

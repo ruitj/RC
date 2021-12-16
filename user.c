@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -9,6 +10,8 @@
 #include <sys/socket.h>
 #include "Client.h"
 #include "func_Client.h"
+#include "TCP_Client.h"
+#include <signal.h>
 
 char port[MAX_PORT_SIZE], *hostName;
 
@@ -57,6 +60,8 @@ void processInput(){
         }
         else if ( strcmp(optype,"ulist")==0 || strcmp(optype,"ul")==0 ){
            listUsers_GID();
+           closeTCP();
+           initTCP("tejo.tecnico.ulisboa.pt","58011");
         }
         else{ /* default case */
             printf("Error: invalid operation: %s\n", optype);
@@ -93,11 +98,18 @@ int main(int argc, char**argv){
     //char hostbuffer[256];
     //gethostname(hostbuffer, sizeof(hostbuffer));
     //printf("%s\n", hostbuffer);
+       struct sigaction act;
     strcpy(port,"58011");
 
-    initSession("tejo.tecnico.ulisboa.pt", port);
+    memset(&act,0, sizeof act);
+   
+   //act.sa_handler=SIG_IGN;
+    signal(SIGPIPE, SIG_IGN);
 
+
+    initSession("tejo.tecnico.ulisboa.pt", port);
     processInput();
+    
 
     return 0;
 }

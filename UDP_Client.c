@@ -41,6 +41,7 @@ char *sendUDP(char *msg){
     addrlen=sizeof(addr);
     
     n=recvfrom(fd_udp, (char *)buffer, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr, &addrlen);
+    
     if (n==-1){  
         exit(1);
     }
