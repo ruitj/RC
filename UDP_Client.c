@@ -9,47 +9,44 @@
 #include <stdio.h>
 #include "Client.h"
 
-int fd_udp, errcode;
+int fd_udp, errcde_udp;
 ssize_t n;
-socklen_t addrlen;
-struct addrinfo hints, *res;
-struct sockaddr_in addr;
-char buffer[MAX_OUTPUT_SIZE];
-char HOST[256], PORT[10]; 
+socklen_t addrlen_udp;
+struct addrinfo hints_udp, *res_udp;
+struct sockaddr_in addr_udp;
+char buffer_udp[MAX_OUTPUT_SIZE];
 
 void initUDP(char hostName[], char port[]){
     fd_udp=socket(AF_INET, SOCK_DGRAM, 0);
     //printf("%d\n",fd_udp);
     if (fd_udp==-1) exit(1);
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    strcpy(HOST, hostName);
-    strcpy(PORT, port);
-    
-    errcode=getaddrinfo(HOST, PORT, &hints, &res);
-    if (errcode!=0) exit(1);
+    memset(&hints_udp, 0, sizeof hints_udp);
+    hints_udp.ai_family = AF_INET;
+    hints_udp.ai_socktype = SOCK_DGRAM;
+
+    errcde_udp=getaddrinfo(hostName, port, &hints_udp, &res_udp);
+    if (errcde_udp!=0) exit(1);
 
 }
 
 char *sendUDP(char *msg){
-    n=sendto(fd_udp, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
+    n=sendto(fd_udp, msg, strlen(msg), 0, res_udp->ai_addr, res_udp->ai_addrlen);
     if (n==-1){ 
        exit(1);
     }
-    addrlen=sizeof(addr);
+    addrlen_udp=sizeof(addr_udp);
     
-    n=recvfrom(fd_udp, (char *)buffer, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr, &addrlen);
+    n=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
     
     if (n==-1){  
         exit(1);
     }
-    buffer[n] = '\0';
-    return buffer;
+    buffer_udp[n] = '\0';
+    return buffer_udp;
 }
 
 void closeUDP(){
-    freeaddrinfo(res);
+    freeaddrinfo(res_udp);
     close(fd_udp);
 }

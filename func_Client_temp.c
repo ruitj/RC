@@ -406,7 +406,7 @@ void post(char *input){
     }
     text[j] = '\n';
 
-    if(input[0] != '"' || input[spaceIndex-1] != '"'){
+    if((input[0] != '"') || (input[spaceIndex-1] != '"')){
         printf("Error: Wrong post format\n");
         return;
     }
@@ -426,7 +426,7 @@ void post(char *input){
         }
         FName[j] = '\n';
 
-        fptr = open("%s",Fname,"rb");
+        fptr = fopen(Fname,"rb");
 
         sprintf(in, "PST %s %s %d %s %s %d %s\n", savedUID, savedGID, strlen(text), text, Fname, strlen(),);
     }

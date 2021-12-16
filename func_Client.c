@@ -378,13 +378,36 @@ void selectGroup(char *input){
 }
 
 void listUsers_GID(){
-    char in[MAX_INPUT_SIZE], *out,g_name[4],users[MAX_OUTPUT_SIZE];
+    char in[MAX_INPUT_SIZE], *out, *status;
+    //g_name[4],users[MAX_OUTPUT_SIZE];
+    
+    if (!GIDSelected){
+        printf("No group selected\n");
+        return;
+    }
+
     sprintf(in, "ULS %s\n", savedGID);
     
-    out = sendTCP(in);
-    
-    sscanf(&out[6],"%s %[^\n]%*c",g_name,users);
-    printf("Group name:%s\n Subscribed users:%s\n",g_name,users);
+    status = sendTCP(in, 4);
+
+    if (strcmp(status, "NOK\n") == 0){
+        printf("Error: invalid group ID\n");
+        return;
+    }
+    else if (strcmp(status, "ERR\n") == 0){
+        printf("Error: invalid group ID\n");
+        return;
+    }
+
+    printf("Group name:");
+
+    while (1){
+        out = readTCP();
+        printf("%s", out);
+        int size = strlen(out);
+        if (out[size-1] == '\n')
+            break;
+    }
 }
 
 /*
