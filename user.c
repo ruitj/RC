@@ -33,7 +33,6 @@ void processInput(){
             unregisterUser(&input[i+1]);
         }
         else if (strcmp(optype, "login") == 0){
-            
             loginUser(&input[i+1]);
         }
         else if (strcmp(optype, "logout") == 0){
@@ -66,7 +65,8 @@ void processInput(){
            listUsers_GID();
         }
         else if (strcmp(optype, "post") == 0){
-            retrieveMessages(&input[i+1]);
+            initTCP("tejo.tecnico.ulisboa.pt", port);
+            postMessage(&input[i+1]);
         }
         else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
             initTCP("tejo.tecnico.ulisboa.pt", port);
