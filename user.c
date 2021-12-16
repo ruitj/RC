@@ -61,8 +61,8 @@ void processInput(){
             showGIDSelected();
         }
         else if ((strcmp(optype,"ulist") == 0) || (strcmp(optype,"ul") == 0)){
-           initTCP("tejo.tecnico.ulisboa.pt", port);
-           listUsers_GID();
+            initTCP("tejo.tecnico.ulisboa.pt", port);
+            listUsers_GID();
         }
         else if (strcmp(optype, "post") == 0){
             initTCP("tejo.tecnico.ulisboa.pt", port);

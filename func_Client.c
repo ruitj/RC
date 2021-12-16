@@ -471,8 +471,12 @@ void retrieveMessages(char *input){
         return;
     }
 
+    //char *nMessages;
+
     while (1){
         out = readTCP(MAX_OUTTCP_SIZE-1);
+        //sscanf(out, "%s", nMessages);
+        
         printf("%s", out);
         int size = strlen(out);
         if (out[size-1] == '\n')

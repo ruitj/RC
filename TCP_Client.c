@@ -52,3 +52,4 @@ void closeTCP(){
     close(fd_tcp);
     freeaddrinfo(res_tcp);
 }
+
