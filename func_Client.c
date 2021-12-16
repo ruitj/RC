@@ -357,7 +357,6 @@ void showMyGroups(){
 
     char Groups[3];
     sscanf(&out[4], "%s", Groups);
-    printf("%s", out);
 
     int nGroups = atoi(Groups);
     char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE], MID[MAX_MID_SIZE];
