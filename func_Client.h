@@ -13,7 +13,8 @@ void subscribeGroup(char *input);
 void unsubscribeGroup(char *input);
 void showMyGroups();
 void selectGroup(char *input);
+void showGIDSelected();
 void listUsers_GID();
-void initSession(char *host, char *port);
+void initSession(char *hostName, char *port);
 void exitSession();
 /* headers das funcoes/operacoes do user */

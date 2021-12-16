@@ -347,6 +347,7 @@ void showMyGroups(){
 
     char Groups[3];
     sscanf(&out[4], "%s", Groups);
+    printf("%s", out);
 
     int nGroups = atoi(Groups);
     char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE], MID[MAX_MID_SIZE];
@@ -377,10 +378,18 @@ void selectGroup(char *input){
 
 }
 
+void showGIDSelected(){
+    if (!GIDSelected){
+        printf("No group selected\n");
+        return;
+    }
+
+    printf("%s\n", savedGID);
+}
+
 void listUsers_GID(){
     char in[MAX_INPUT_SIZE], *out, *status;
-    //g_name[4],users[MAX_OUTPUT_SIZE];
-    
+
     if (!GIDSelected){
         printf("No group selected\n");
         return;
@@ -399,15 +408,18 @@ void listUsers_GID(){
         return;
     }
 
+    readTCP(2); // get 'OK'
+
     printf("Group name:");
 
     while (1){
-        out = readTCP();
+        out = readTCP(MAX_OUTPUT_SIZE-1);
         printf("%s", out);
         int size = strlen(out);
         if (out[size-1] == '\n')
             break;
     }
+    closeTCP();
 }
 
 /*
@@ -423,12 +435,10 @@ void post(char *input){
 }
 */
 
-void initSession(char *host, char *port){
-    initUDP(host, port);
-   // initTCP(host, port);
+void initSession(char *hostName, char *port){
+    initUDP(hostName, port);
 }
 
 void exitSession(){
     closeUDP();
-   // closeTCP();
 }

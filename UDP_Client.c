@@ -10,7 +10,7 @@
 #include "Client.h"
 
 int fd_udp, errcde_udp;
-ssize_t n;
+ssize_t n_udp;
 socklen_t addrlen_udp;
 struct addrinfo hints_udp, *res_udp;
 struct sockaddr_in addr_udp;
@@ -31,18 +31,14 @@ void initUDP(char hostName[], char port[]){
 }
 
 char *sendUDP(char *msg){
-    n=sendto(fd_udp, msg, strlen(msg), 0, res_udp->ai_addr, res_udp->ai_addrlen);
-    if (n==-1){ 
-       exit(1);
-    }
+    n_udp=sendto(fd_udp, msg, strlen(msg), 0, res_udp->ai_addr, res_udp->ai_addrlen);
+    if (n_udp==-1) exit(1);
     addrlen_udp=sizeof(addr_udp);
     
-    n=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
+    n_udp=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTPUT_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
     
-    if (n==-1){  
-        exit(1);
-    }
-    buffer_udp[n] = '\0';
+    if (n_udp==-1) exit(1);
+    buffer_udp[n_udp] = '\0';
     return buffer_udp;
 }
 
@@ -50,3 +46,4 @@ void closeUDP(){
     freeaddrinfo(res_udp);
     close(fd_udp);
 }
+

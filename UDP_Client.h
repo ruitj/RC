@@ -1,3 +1,3 @@
-void initUDP(char IP[], char port[]);
+void initUDP(char hostName[], char port[]);
 char *sendUDP(char *msg);
 void closeUDP();

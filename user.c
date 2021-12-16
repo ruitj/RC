@@ -58,11 +58,12 @@ void processInput(){
         else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
             selectGroup(&input[i+1]);
         }
-        else if ( strcmp(optype,"ulist")==0 || strcmp(optype,"ul")==0 ){
-           initTCP("tejo.tecnico.ulisboa.pt","58011");
+        else if ((strcmp(optype, "showgid") == 0) || (strcmp(optype, "sg") == 0)){
+            showGIDSelected();
+        }
+        else if ((strcmp(optype,"ulist") == 0) || (strcmp(optype,"ul") == 0)){
+           initTCP("tejo.tecnico.ulisboa.pt", port);
            listUsers_GID();
-           closeTCP();
-           initTCP("tejo.tecnico.ulisboa.pt","58011");
         }
         else{ /* default case */
             printf("Error: invalid operation: %s\n", optype);
@@ -99,14 +100,7 @@ int main(int argc, char**argv){
     //char hostbuffer[256];
     //gethostname(hostbuffer, sizeof(hostbuffer));
     //printf("%s\n", hostbuffer);
-       struct sigaction act;
     strcpy(port,"58011");
-
-    memset(&act,0, sizeof act);
-   
-   //act.sa_handler=SIG_IGN;
-    signal(SIGPIPE, SIG_IGN);
-
 
     initSession("tejo.tecnico.ulisboa.pt", port);
     processInput();
