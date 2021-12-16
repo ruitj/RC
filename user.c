@@ -69,6 +69,7 @@ void processInput(){
             retrieveMessages(&input[i+1]);
         }
         else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
+            initTCP("tejo.tecnico.ulisboa.pt", port);
             retrieveMessages(&input[i+1]);
         }
         else{ /* default case */
