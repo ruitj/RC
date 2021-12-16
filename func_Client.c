@@ -46,6 +46,16 @@ int validGName(char *input){
     return 1;
 }
 
+int validMID(char *input){
+    if (strlen(input) >= 6)
+        return 0;
+    for (int i = 0; input[i] != '\n'; i++){
+        if ((!isdigit(input[i])) || (i >= 4))
+            return 0;
+    }
+    return 1;
+}
+
 void registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
 
@@ -404,7 +414,7 @@ void listUsers_GID(){
         return;
     }
     else if (strcmp(status, "ERR\n") == 0){
-        printf("Error: invalid group ID\n");
+        printf("Error: invalid message format\n");
         return;
     }
 
@@ -427,7 +437,50 @@ void postMessage(char *input){
 }
 
 void retrieveMessages(char *input){
-    return;
+    char in[MAX_INPUT_SIZE], *out, *status;
+
+    if (!GIDSelected){
+        printf("No group selected\n");
+        return;
+    }
+    else if (!loggedin){
+        printf("Error: User not logged in\n");
+        return;
+    }
+
+    if (!validMID(input)){
+        printf("Error: invalid message ID\n");
+        return;
+    }
+
+    char MID[MAX_MID_SIZE];
+    sscanf(input,"%s", MID);
+    sprintf(in ,"RTV %s %s %s\n", savedUID, savedGID, MID);
+
+    status = sendTCP(in, 7);
+
+    if (strcmp(status, "RRT NOK") == 0){
+        printf("Error: invalid credentials\n");
+        return;
+    }
+    else if (strcmp(status, "RRT EOF") == 0){
+        printf("No messages available\n");
+        return;
+    }
+    else if (strcmp(status, "RRT ERR") == 0){
+        printf("Error: invalid message format\n");
+        return;
+    }
+
+    while (1){
+        out = readTCP(MAX_OUTTCP_SIZE-1);
+        printf("%s", out);
+        int size = strlen(out);
+        if (out[size-1] == '\n')
+            break;
+    }
+    closeTCP();
+
 }
 
 void initSession(char *hostName, char *port){

@@ -2,6 +2,7 @@ int validUID(char *input);
 int validPassword(char *input);
 int validGID(char *input);
 int validGName(char *input);
+int validMID(char *input);
 void registerUser(char *input);
 void unregisterUser(char *input);
 void loginUser(char *input);
