@@ -46,16 +46,6 @@ int validGName(char *input){
     return 1;
 }
 
-int validMID(char *input){
-    if (strlen(input) >= 6)
-        return 0;
-    for (int i = 0; input[i] != '\n'; i++){
-        if ((!isdigit(input[i])) || (i >= 4))
-            return 0;
-    }
-    return 1;
-}
-
 void registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
 
@@ -442,11 +432,6 @@ void retrieveMessages(char *input){
     }
     else if (!loggedin){
         printf("Error: User not logged in\n");
-        return;
-    }
-
-    if (!validMID(input)){
-        printf("Error: invalid message ID\n");
         return;
     }
 
