@@ -406,20 +406,18 @@ void listUsers_GID(){
 
     sprintf(in, "ULS %s\n", savedGID);
     
-    status = sendTCP(in, 4);
+    status = sendTCP(in, 7);
 
-    if (strcmp(status, "NOK\n") == 0){
+    if (strcmp(status, "RLU NOK") == 0){
         printf("Error: invalid group ID\n");
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
+    else if (strcmp(status, "RLU ERR") == 0){
         printf("Error: invalid message format\n");
         return;
     }
 
-    readTCP(2); // get 'OK'
-
-    printf("Group name:");
+    printf("Group name: ");
 
     while (1){
         out = readTCP(MAX_OUTTCP_SIZE-1);
