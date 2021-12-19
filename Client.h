@@ -9,3 +9,5 @@
 #define MAX_GNAME_SIZE 25
 #define MAX_MID_SIZE 5
 #define MAX_OPTYPE_SIZE 11
+#define MAX_TEXT_SIZE 241
+#define MAX_FNAME_SIZE 25

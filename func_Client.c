@@ -420,7 +420,77 @@ void listUsers_GID(){
 }
 
 void postMessage(char *input){
-    return;
+    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[99999], input_temp[MAX_TEXT_SIZE];
+    int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;;
+    FILE *fptr;
+
+    if (!loggedin){
+        printf("Error: User not logged in\n");
+        return;
+    }
+    else if (!GIDSelected){
+        printf("Error: No group selected\n");
+        return;
+    }
+    int i = 1;
+    strcpy(input_temp,input);
+    if(input_temp[0] != '"'){
+        printf("Error: Wrong post format\n");
+        return;
+    }
+    while(input_temp[i] != '\n'){
+        if(input_temp[i] == '"'){
+            if((input_temp[i+1] == ' ')){
+                duasAspas = 1;
+                spaceIndex = i+1;
+                withFile = 1;
+                break;
+            }
+            else if(input_temp[i+1] == '\n'){
+                duasAspas = 1;
+                break;
+            }
+            else{
+                printf("Error: Wrong post format\n");
+                return;
+            }
+        }
+        text[i-1] = input_temp[i];
+        i++;
+    }
+    text[i-1] = '\0';
+    if(duasAspas == 0){
+        printf("Error: Wrong post format\n");
+        return;
+    }
+    if(withFile == 0){
+        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
+        printf("in a mandar: %s",in);
+    }
+    else{
+        strcpy(FName,&input_temp[spaceIndex+1]);
+        fptr = fopen(FName,"rb");
+        //seg fault no fread
+        fread(buffer,sizeof(buffer),1,fptr);
+        fseek(fptr, 0, SEEK_END);
+        //para o malloc depois 
+        sizeFile = ftell(fptr);
+
+        sprintf(in, "PST %s %s %lu %s %s %d %s\n", savedUID, savedGID, strlen(text), text, FName, sizeFile, buffer);
+        printf("in a mandar: %s",in);
+    }
+
+    status = sendTCP(in, 9);
+
+    if (strcmp(status, "RPT NOK\n") == 0){
+        printf("Error: invalid post\n");
+        closeTCP();
+        return;
+    }
+
+    printf("Posted message %s to group %s", &status[4], savedGID);
+    closeTCP();
+    return;   
 }
 
 void retrieveMessages(char *input){
