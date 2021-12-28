@@ -41,6 +41,18 @@ char *sendTCP(char *msg, int n_bytes){
     return buffer_tcp;
 }
 
+void connectTCP(){
+    connect(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen);
+}
+
+int writeTCP(char *msg){
+    n_tcp=write(fd_tcp, msg, strlen(msg));
+    if(n_tcp==-1) exit(1);
+
+    printf("num bytes enviados %ld\n",n_tcp);
+    return n_tcp;
+}
+
 char *readTCP(int n_bytes){
     n_tcp=read(fd_tcp, buffer_tcp, n_bytes);
     if(n_tcp==-1) exit(1);
