@@ -67,12 +67,15 @@ void registerUser(char *input){
 
     if (strcmp(out, "RRG OK\n") == 0){
         printf("User successfully registered\n");
+        return;
     }
     else if (strcmp(out, "RRG NOK\n") == 0){
         printf("Invalid credentials\n");
+        return;
     }
     else if (strcmp(out, "RRG DUP\n") == 0){
         printf("User already registered\n");
+        return;
     }
     else if (strcmp(out, "ERR\n") == 0){
         printf("Error: Invalid message format\n");
@@ -101,9 +104,11 @@ void unregisterUser(char *input){
 
     if (strcmp(out, "RUN OK\n") == 0){
         printf("User successfully unregistered\n");
+        return;
     }
     else if (strcmp(out, "RUN NOK\n") == 0){
         printf("Invalid credentials\n");
+        return;
     }
     else if (strcmp(out, "ERR\n") == 0){
         printf("Error: Invalid message format\n");
@@ -141,6 +146,7 @@ void loginUser(char *input){
     }
     else if (strcmp(out, "RLO NOK\n") == 0){
         printf("Invalid credentials\n");
+        return;
     }
     else if (strcmp(out, "ERR\n") == 0){
         printf("Error: Invalid message format\n");
@@ -169,6 +175,7 @@ void logoutUser(){
     }
     else if (strcmp(out, "ROU NOK\n") == 0){
         printf("Invalid credentials\n");
+        return;
     }
     else if (strcmp(out, "ERR\n") == 0){
         printf("Error: Invalid message format\n");

@@ -13,7 +13,7 @@
 #include "TCP_Client.h"
 #include <signal.h>
 
-char port[MAX_PORT_SIZE], *hostName;
+char port[MAX_PORT_SIZE], hostName[MAX_HOST_SIZE];
 
 void processInput(){
     char input[MAX_INPUT_SIZE];
@@ -27,50 +27,105 @@ void processInput(){
         }
         optype[i] = '\0';
         if (strcmp(optype, "reg") == 0){
-            registerUser(&input[i+1]);
+            if (input[i] == ' '){
+                registerUser(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
-            unregisterUser(&input[i+1]);
+            if (input[i] == ' '){
+                unregisterUser(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if (strcmp(optype, "login") == 0){
-            loginUser(&input[i+1]);
+            if (input[i] == ' '){
+                loginUser(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if (strcmp(optype, "logout") == 0){
-            logoutUser(&input[i+1]);
+            if (strcmp(&input[i], "\n") == 0){
+                logoutUser();
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if (strcmp(optype, "exit") == 0){
-            exitSession();
-            break;
+            if (strcmp(&input[i], "\n") == 0){
+                exitSession();
+                break;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
-            showAvailableGroups();
+            if (strcmp(&input[i], "\n") == 0){
+                showAvailableGroups();
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "subscribe") == 0) || (strcmp(optype, "s") == 0)){
-            subscribeGroup(&input[i+1]);
+            if (input[i] == ' '){
+                subscribeGroup(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "unsubscribe") == 0) || (strcmp(optype, "u") == 0)){
-            unsubscribeGroup(&input[i+1]);
+            if (input[i] == ' '){
+                unsubscribeGroup(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "my_groups") == 0) || (strcmp(optype, "mgl") == 0)){
-            showMyGroups();
+            if (strcmp(&input[i], "\n") == 0){
+                showMyGroups();
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
-            selectGroup(&input[i+1]);
+            if (input[i] == ' '){
+                selectGroup(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "showgid") == 0) || (strcmp(optype, "sg") == 0)){
-            showGIDSelected();
+            if (strcmp(&input[i], "\n") == 0){
+                showGIDSelected();
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype,"ulist") == 0) || (strcmp(optype,"ul") == 0)){
-            initTCP("tejo.tecnico.ulisboa.pt", port);
-            listUsers_GID();
+            if (strcmp(&input[i], "\n") == 0){
+                initTCP("tejo.tecnico.ulisboa.pt", port);
+                listUsers_GID();
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if (strcmp(optype, "post") == 0){
-            initTCP("tejo.tecnico.ulisboa.pt", port);
-            postMessage(&input[i+1]);
+            if (input[i] == ' '){
+                initTCP("tejo.tecnico.ulisboa.pt", port);
+                postMessage(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
-            initTCP("tejo.tecnico.ulisboa.pt", port);
-            retrieveMessages(&input[i+1]);
+            if (input[i] == ' '){
+                initTCP("tejo.tecnico.ulisboa.pt", port);
+                retrieveMessages(&input[i+1]);
+                continue;
+            }
+            printf("Error: invalid operation: %s", input);
         }
         else{ /* default case */
             printf("Error: invalid operation: %s\n", optype);
@@ -78,41 +133,50 @@ void processInput(){
     }
 }
 
-/*int parseArgs(int n, char **args){
+int parseArgs(int n, char **args){
     if(n > 1){
-        if(strcmp(args[1],"-n") == 0){
-            IP = args[2];
-            if((n == 5) && (strcmp(args[3],"-p") == 0)){
-                port = args[4];
+        if (n >= 3){
+            if(strcmp(args[1],"-n") == 0){
+                strcpy(hostName, args[2]);
+                if((n == 5) && (strcmp(args[3],"-p") == 0)){
+                    strcpy(port, args[4]);
+                    return 1;
+                }
+                else if (n == 3){
+                    strcpy(port, PORT_DEFAULT);
+                    return 1;
+                }
+                else{
+                    fprintf(stderr,"Error: invalid arguments\n");
+                    exit(1);
+                }
+            }
+            else if(strcmp(args[1],"-p") == 0){
+                strcpy(port, args[2]);
+                gethostname(hostName, sizeof(hostName));
+                return 1;
             }
             else{
                 fprintf(stderr,"Error: invalid arguments\n");
-                exit(EXIT_FAILURE);
+                exit(1);
             }
         }
-        else if(strcmp(args[1],"-p") == 0){
-            port = args[2];
-        }
-        else{
-            fprintf(stderr,"Error: invalid arguments\n");
-        }
     }
-}*/
+    return 0;
+}
 
 int main(int argc, char**argv){
 
     //input parsing
-    //parseArgs(argc, argv)
-    //struct hostent *host_entry;
-    //char hostbuffer[256];
-    //gethostname(hostbuffer, sizeof(hostbuffer));
-    //printf("%s\n", hostbuffer);
-    strcpy(port,"58011");
+    int p = parseArgs(argc, argv);
+    if (p == 0){
+        gethostname(hostName, sizeof(hostName));
+        strcpy(port, PORT_DEFAULT);
+    }
 
-    initSession("tejo.tecnico.ulisboa.pt", port);
+    initSession(hostName, port);
     processInput();
     
-
     return 0;
 }
 
