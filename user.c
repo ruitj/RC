@@ -105,7 +105,7 @@ void processInput(){
         }
         else if ((strcmp(optype,"ulist") == 0) || (strcmp(optype,"ul") == 0)){
             if (strcmp(&input[i], "\n") == 0){
-                initTCP("tejo.tecnico.ulisboa.pt", port);
+                initTCP(hostName, port);
                 listUsers_GID();
                 continue;
             }
@@ -113,7 +113,7 @@ void processInput(){
         }
         else if (strcmp(optype, "post") == 0){
             if (input[i] == ' '){
-                initTCP("tejo.tecnico.ulisboa.pt", port);
+                initTCP(hostName, port);
                 postMessage(&input[i+1]);
                 continue;
             }
@@ -121,7 +121,7 @@ void processInput(){
         }
         else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
             if (input[i] == ' '){
-                initTCP("tejo.tecnico.ulisboa.pt", port);
+                initTCP(hostName, port);
                 retrieveMessages(&input[i+1]);
                 continue;
             }
