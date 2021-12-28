@@ -530,7 +530,7 @@ void retrieveMessages(char *input){
         printf("No messages available\n");
         return;
     }
-    else if (strcmp(status, "ERR") == 0){
+    else if (strcmp(status, "ERR\n") == 0){
         printf("Error: unexpected protocol message\n");
         return;
     }
