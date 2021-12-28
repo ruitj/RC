@@ -508,15 +508,21 @@ void listUsers_GID(){
         i+= num;
     }
     status = readTCP(9);*/
-    status = sendTCP(in, 9);
+    status = sendTCP(in,9);
 
     if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
+    else if (strcmp(status, "ERR\n") == 0){
+        printf("Error: unexpected protocol message\n");
+        closeTCP();
+        return;
+    }
 
-    printf("Posted message %s to group %s", &status[4], savedGID);
+    status[strlen(status)-1] = '\0';
+    printf("Posted message %s to group %s\n", &status[4], savedGID);
     closeTCP();
     return;
 }*/
