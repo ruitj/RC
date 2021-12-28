@@ -78,7 +78,7 @@ void registerUser(char *input){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 }
@@ -111,7 +111,7 @@ void unregisterUser(char *input){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 }
@@ -149,7 +149,7 @@ void loginUser(char *input){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -178,7 +178,7 @@ void logoutUser(){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -202,7 +202,7 @@ void showAvailableGroups(){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -258,7 +258,7 @@ void subscribeGroup(char *input){
     out = sendUDP(in);
 
     if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
     
@@ -322,7 +322,7 @@ void unsubscribeGroup(char *input){
         printf("Invalid credentials\n");
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -348,7 +348,7 @@ void showMyGroups(){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: Invalid message format\n");
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -390,7 +390,7 @@ void showGIDSelected(){
         return;
     }
 
-    printf("%s\n", savedGID);
+    printf("Selected group: %s\n", savedGID);
 }
 
 void listUsers_GID(){
@@ -409,8 +409,8 @@ void listUsers_GID(){
         printf("Error: invalid group ID\n");
         return;
     }
-    else if (strcmp(status, "RLU ERR") == 0){
-        printf("Error: invalid message format\n");
+    else if (strcmp(status, "ERR") == 0){
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
@@ -426,7 +426,7 @@ void listUsers_GID(){
     closeTCP();
 }
 
-void postMessage(char *input){
+/*void postMessage(char *input){
     char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[99999], input_temp[MAX_TEXT_SIZE];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;;
     FILE *fptr;
@@ -471,7 +471,7 @@ void postMessage(char *input){
         return;
     }
     if(withFile == 0){
-        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
+        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text)+1, text);
         printf("in a mandar: %s",in);
     }
     else{
@@ -497,7 +497,11 @@ void postMessage(char *input){
 
     printf("Posted message %s to group %s", &status[4], savedGID);
     closeTCP();
-    return;   
+    return;
+}*/
+
+void postMessage(char *input){
+    return;
 }
 
 void retrieveMessages(char *input){
@@ -526,8 +530,8 @@ void retrieveMessages(char *input){
         printf("No messages available\n");
         return;
     }
-    else if (strcmp(status, "RRT ERR") == 0){
-        printf("Error: invalid message format\n");
+    else if (strcmp(status, "ERR") == 0){
+        printf("Error: unexpected protocol message\n");
         return;
     }
 
