@@ -476,17 +476,38 @@ void listUsers_GID(){
     }
     else{
         strcpy(FName,&input_temp[spaceIndex+1]);
+        FName[strlen(FName)-1] = '\0';
         fptr = fopen(FName,"rb");
-        //seg fault no fread
-        fread(buffer,sizeof(buffer),1,fptr);
-        fseek(fptr, 0, SEEK_END);
-        //para o malloc depois 
+        if (fptr == NULL){
+            printf("Error: file cannot be opened\n");
+            closeTCP();
+            fclose(fptr);
+            return;
+        }
+        fseek(fptr,0,SEEK_END);
         sizeFile = ftell(fptr);
+        fseek(fptr,0,SEEK_SET);
+        fread(buffer,sizeof(buffer),1,fptr);
+        buffer[sizeFile] = '\0';
+
+        for(i = 0;buffer[i]!='\n';i++){
+            printf("buffer: %c\n",buffer[i]);
+        }
 
         sprintf(in, "PST %s %s %lu %s %s %d %s\n", savedUID, savedGID, strlen(text), text, FName, sizeFile, buffer);
         printf("in a mandar: %s",in);
+        fclose(fptr);
     }
 
+    /*connectTCP();
+    i=0;
+    int num = 0;
+    while(in[i]!='\n'){
+        num = writeTCP(in);
+        bzero(in, num);
+        i+= num;
+    }
+    status = readTCP(9);*/
     status = sendTCP(in, 9);
 
     if (strcmp(status, "RPT NOK\n") == 0){
