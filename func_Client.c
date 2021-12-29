@@ -543,6 +543,13 @@ void retrieveMessages(char *input){
         return;
     }
 
+    for (int i = 0; input[i] != '\n'; i++){
+        if ((!isdigit(input[i])) || (i >= 4)){
+            printf("Error: invalid credentials\n");
+            return;
+        }
+    }
+
     char MID[MAX_MID_SIZE];
     sscanf(input,"%s", MID);
     sprintf(in ,"RTV %s %s %s\n", savedUID, savedGID, MID);
@@ -562,19 +569,73 @@ void retrieveMessages(char *input){
         return;
     }
 
-    //char *nMessages;
+    out = readTCP(5); // reads number of messages retrieved
+    printf("%s message(s) retrieved:\n", out);
+    int n_msgs = atoi(out);
+    int n_read = 0; // msgs already read
+    int j;
 
-    while (1){
-        out = readTCP(MAX_OUTTCP_SIZE-1);
-        //sscanf(out, "%s", nMessages);
+    readTCP(1); // reads space
+    out = readTCP(1);
+    while (n_read < n_msgs){
+        char MID[MAX_MID_SIZE], TSize[4], text[MAX_TEXT_SIZE];
+
+        for (j = 0; isdigit(out[0]); j++){
+            MID[j] = out[0];
+            out = readTCP(1);
+        }
+        MID[j] = '\0';
+
+        readTCP(6); // reads UID
+
+        out = readTCP(1);
+        for (j = 0; isdigit(out[0]); j++){
+            TSize[j] = out[0];
+            out = readTCP(1);
+        }
+        TSize[j] = '\0';
+
+        int size = atoi(TSize);
+        out = readTCP(size);
+        strcpy(text, out);
+        text[size] = '\0'; // remove \n
+
+        printf("%s - \"%s\"", MID, text);
+
+        readTCP(1); // reads space
+        out = readTCP(1);
         
-        printf("%s", out);
-        int size = strlen(out);
-        if (out[size-1] == '\n')
-            break;
-    }
-    closeTCP();
+        if (out[0] == '/'){
+            readTCP(1); // reads space
+            char FName[MAX_FNAME_SIZE], FSize[11];
 
+            out = readTCP(1);
+            for (j = 0; out[0] != ' '; j++){
+                FName[j] = out[0];
+                out = readTCP(1);
+            }
+            FName[j] = '\0';
+
+            out = readTCP(1);
+            for (j = 0; out[0] != ' '; j++){
+                FSize[j] = out[0];
+                out = readTCP(1);
+            }
+            FSize[j] = '\0';
+
+            int size = atoi(FSize);
+            readTCP(size+1);
+
+            printf("; file stored: %s", FName);
+
+            out = readTCP(1);
+
+        }
+        printf("\n");
+        n_read++;
+    }
+
+    closeTCP();
 }
 
 void initSession(char *hostName, char *port){
