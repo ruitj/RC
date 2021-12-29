@@ -414,7 +414,17 @@ void listUsers_GID(){
         return;
     }
 
-    printf("Group name: ");
+    char GName[MAX_GNAME_SIZE];
+    int j;
+    out = readTCP(1);
+    for (j = 0; out[0] != ' '; j++){
+        GName[j] = out[0];
+        out = readTCP(1);
+    }
+    GName[j] = '\0';
+
+    printf("Group name: %s\n", GName);
+    printf("User IDs: ");
 
     while (1){
         out = readTCP(MAX_OUTTCP_SIZE-1);
