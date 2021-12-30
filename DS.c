@@ -9,17 +9,16 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "func_Server.h"
 #define PORT_DEFAULT 58033
 #define MAXLINE 1024
-int max(int x, int y)
-{
+int max(int x, int y){
     if (x > y)
         return x;
     else
         return y;
 }
-int main()
-{
+int main(){
     int listenfd, connfd, udpfd, nready, maxfdp1;
     char buffer[MAXLINE];
     fd_set rset;
@@ -27,7 +26,7 @@ int main()
     socklen_t len;
     const int on = 1;
     struct sockaddr_in cliaddr, servaddr;
-    char* message = "Hello Client";
+    char *out;
     void sig_chld(int);
  
     /* create listening TCP socket */
@@ -77,12 +76,10 @@ int main()
         if (FD_ISSET(udpfd, &rset)) {
             len = sizeof(cliaddr);
             bzero(buffer, sizeof(buffer));
-            printf("\nMessage from UDP client: ");
-            n = recvfrom(udpfd, buffer, sizeof(buffer), 0,
-                        (struct sockaddr*)&cliaddr, &len);
-            puts(buffer);
-            sendto(udpfd, (const char*)message, sizeof(buffer), 0,
-                (struct sockaddr*)&cliaddr, sizeof(cliaddr));
+            printf("\nMessage from UDP client\n");
+            n = recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len);
+            out = processInput(buffer);
+            sendto(udpfd, (const char*)out, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
         }
     }
 }
