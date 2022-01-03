@@ -49,7 +49,6 @@ int writeTCP(char *msg){
     n_tcp=write(fd_tcp, msg, strlen(msg));
     if(n_tcp==-1) exit(1);
 
-    printf("num bytes enviados %ld\n",n_tcp);
     return n_tcp;
 }
 
