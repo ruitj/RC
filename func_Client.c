@@ -103,6 +103,13 @@ void unregisterUser(char *input){
     out = sendUDP(in);
 
     if (strcmp(out, "RUN OK\n") == 0){
+        if (strncmp(input, savedUID, 5) == 0){
+            savedUID[0] = '\0';
+            savedPass[0] = '\0';
+            savedGID[0] = '\0';
+            loggedin = 0;
+            GIDSelected = 0;
+        }
         printf("User successfully unregistered\n");
         return;
     }
@@ -486,53 +493,26 @@ void listUsers_GID(){
     }
     else{
         strcpy(FName,&input_temp[spaceIndex+1]);
-        FName[strlen(FName)-1] = '\0';
         fptr = fopen(FName,"rb");
-        if (fptr == NULL){
-            printf("Error: file cannot be opened\n");
-            closeTCP();
-            fclose(fptr);
-            return;
-        }
-        fseek(fptr,0,SEEK_END);
-        sizeFile = ftell(fptr);
-        fseek(fptr,0,SEEK_SET);
+        //seg fault no fread
         fread(buffer,sizeof(buffer),1,fptr);
-        buffer[sizeFile] = '\0';
-
-        for(i = 0;buffer[i]!='\n';i++){
-            printf("buffer: %c\n",buffer[i]);
-        }
+        fseek(fptr, 0, SEEK_END);
+        //para o malloc depois 
+        sizeFile = ftell(fptr);
 
         sprintf(in, "PST %s %s %lu %s %s %d %s\n", savedUID, savedGID, strlen(text), text, FName, sizeFile, buffer);
         printf("in a mandar: %s",in);
-        fclose(fptr);
     }
 
-    /*connectTCP();
-    i=0;
-    int num = 0;
-    while(in[i]!='\n'){
-        num = writeTCP(in);
-        bzero(in, num);
-        i+= num;
-    }
-    status = readTCP(9);*/
-    status = sendTCP(in,9);
+    status = sendTCP(in, 9);
 
     if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
-        closeTCP();
-        return;
-    }
 
-    status[strlen(status)-1] = '\0';
-    printf("Posted message %s to group %s\n", &status[4], savedGID);
+    printf("Posted message %s to group %s", &status[4], savedGID);
     closeTCP();
     return;
 }*/
@@ -634,6 +614,7 @@ void retrieveMessages(char *input){
             FSize[j] = '\0';
 
             int size = atoi(FSize);
+            // while to do
             readTCP(size+1);
 
             printf("; file stored: %s", FName);

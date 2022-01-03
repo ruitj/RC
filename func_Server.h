@@ -1,4 +1,9 @@
-void processInput(char *input);
-int DelUserDir(char *UID);
-int ListGroupsDir(GROUPLIST *list);
-int DelPassFile(char *UID);
+#include "Server.h"
+
+char *processInput(char *input);
+char *registerUserS(char *input);
+char* unregisterUserS(char *input);
+char *loginUserS(char *input);
+char *logoutUserS(char *input);
+char *showAvailableGroupsS();
+char *subscribeGroupS(char *input);

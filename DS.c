@@ -9,22 +9,26 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include "func_Server.h"
 #include "func_Server.h"
 #define PORT_DEFAULT 58033
 #define MAXLINE 1024
+
 int max(int x, int y){
     if (x > y)
         return x;
     else
         return y;
 }
+
 int main(){
+
     int listenfd, connfd, udpfd, nready, maxfdp1;
-    char buffer[MAXLINE];
+    char buffer[MAX_OUT_SIZE];
     fd_set rset;
     ssize_t n;
     socklen_t len;
-    const int on = 1;
     struct sockaddr_in cliaddr, servaddr;
     char *out;
     void sig_chld(int);
@@ -69,17 +73,17 @@ int main(){
             printf("Message From TCP client: ");
             read(connfd, buffer, sizeof(buffer));
             puts(buffer);
-            write(connfd, (const char*)message, sizeof(buffer));
+            write(connfd, (const char*)buffer, sizeof(buffer));
             close(connfd);
         }
         // if udp socket is readable receive the message.
         if (FD_ISSET(udpfd, &rset)) {
             len = sizeof(cliaddr);
             bzero(buffer, sizeof(buffer));
-            printf("\nMessage from UDP client\n");
             n = recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len);
             out = processInput(buffer);
-            sendto(udpfd, (const char*)out, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
+            sendto(udpfd, (const char*)out, strlen(out), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
         }
     }
+    return 0;
 }
