@@ -134,6 +134,11 @@ void unregisterUser(char *input){
 
 void loginUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
+    
+    if (loggedin){
+        printf("User already logged in\n");
+        return;
+    }
 
     if (!validUID(input)){
         printf("Error: Invalid input format\n");
