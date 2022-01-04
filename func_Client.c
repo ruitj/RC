@@ -453,8 +453,9 @@ void listUsers_GID(){
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[2048], input_temp[MAX_TEXT_SIZE];
-    int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;;
+    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE], *sendBuffer;
+    int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
+    ssize_t nwritten, nleft;
     FILE *fptr;
 
     if (!loggedin){
@@ -497,8 +498,8 @@ void postMessage(char *input){
         return;
     }
     if(withFile == 0){
-        //sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
-        //printf("in a mandar: %s",in);
+        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
+        printf("in a mandar: %s",in);
         connectTCP();
         writeTCP(in);
     }
@@ -519,18 +520,21 @@ void postMessage(char *input){
         sprintf(in, "PST %s %s %lu %s %s %d ", savedUID, savedGID, strlen(text), text, FName, sizeFile);
         connectTCP();
         writeTCP(in);
-        while(!feof(fptr)) {
-            fread(buffer, 1024, 1, fptr);
-            writeTCP(buffer);
-            bzero(buffer, 2048);
-            //printf("dentro ciclo\n");
+        nleft = sizeFile;
+        while(nleft>0){
+            fread(buffer, 512, 1, fptr);
+            sendBuffer = &buffer[0];
+            nwritten = writeTCP(sendBuffer);
+            if(nwritten<0){
+                printf("Error: error sending file\n");
+                closeTCP();
+            }
+            nleft -= nwritten;
+            sendBuffer += nwritten;
         }
-        //printf("fora ciclo\n");
         fclose(fptr);
     }
-    //printf("antes read\n");
     status = readTCP(9);
-    //printf("depois read\n");
 
     if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
@@ -542,7 +546,7 @@ void postMessage(char *input){
         closeTCP();
         return;
     }
-
+    
     status[strlen(status)-1] = '\0';
     printf("Posted message %s to group %s\n", &status[4], savedGID);
     closeTCP();
