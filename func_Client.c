@@ -614,7 +614,10 @@ void retrieveMessages(char *input){
             FSize[j] = '\0';
 
             int size = atoi(FSize);
-            // while to do
+            while (size > MAX_OUTTCP_SIZE){
+                readTCP(MAX_OUTTCP_SIZE);
+                size -= MAX_OUTTCP_SIZE;
+            }
             readTCP(size+1);
 
             printf("; file stored: %s", FName);
