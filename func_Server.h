@@ -7,3 +7,4 @@ char *loginUserS(char *input);
 char *logoutUserS(char *input);
 char *showAvailableGroupsS();
 char *subscribeGroupS(char *input);
+char *unsubscribeGroupS(char *input);

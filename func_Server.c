@@ -56,14 +56,14 @@ char* processInput(char *input){
         else{
             sprintf(out, "ERR\n");
         }
-    }/*
+    }
     else if (strcmp(command, "GUR") == 0){
         if (input[3] == ' ')
             out = unsubscribeGroupS(&input[4]);
         else{
             sprintf(out, "ERR\n");
         }
-    }
+    }/*
     else if (strcmp(command, "GLM") == 0){
         out = showMyGroupsS();
     }
@@ -506,4 +506,70 @@ char *subscribeGroupS(char *input){
         }
     }
 
+}
+
+char *unsubscribeGroupS(char *input){
+    if (!validUID(input)){
+        return "RGS E_USR\n";
+    }
+    if (input[5] != ' '){
+        return "RGS NOK\n";
+    }
+    if (!validGID(&input[6])){
+        return "RGS E_GRP\n";
+    }
+    if (input[8] != '\n'){
+        return "RGS NOK\n";
+    }
+
+    char UID[6], GID[3], GName[25];
+
+    strncpy(UID, input, 5); UID[5] = '\0';
+    strncpy(GID, &input[6], 2); GID[2] = '\0';
+
+    DIR *d_USR, *d_GRP;
+    struct dirent *dir_usr, *dir_grp;
+    int valid = 0, i = 0;
+    d_USR = opendir("USERS");
+    if (d_USR){
+        while ((dir_usr = readdir(d_USR)) != NULL){
+            if (strcmp(dir_usr->d_name, UID) == 0){
+                valid = 1;
+                break;
+            }
+            if (i == 99999)
+                break;
+            i++;
+        }
+        closedir(d_USR);
+        if (!valid)
+            return "RGS E_USR\n";
+    }
+
+    valid = 0;
+    d_GRP = opendir("GROUPS");
+    if (d_GRP){
+        while ((dir_grp = readdir(d_GRP)) != NULL){
+            if (strcmp(dir_grp->d_name, GID) == 0){
+                valid = 1;
+            }
+            if (i == 99){
+                closedir(d_GRP);
+                return "RGS E_FULL\n";
+            }
+            i++;
+        }
+        closedir(d_GRP);
+        if (!valid)
+            return "RGS NOK\n";
+        
+        char GIDPath[24];
+        sprintf(GIDPath, "GROUPS/%s/%s.txt", GID, UID);
+        if (!deleteFile(GIDPath)){
+            return "RGS NOK\n";
+        }
+
+        printf("UID=%s: unsubscribed group: %s\n", UID, GID);
+        return "RGS OK\n";
+    }
 }
