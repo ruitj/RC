@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "func_Server.h"
 
 char out[MAX_OUT_SIZE];
