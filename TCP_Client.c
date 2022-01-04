@@ -13,7 +13,7 @@
 int fd_tcp, errcode_tcp;
 ssize_t n_tcp;
 struct addrinfo hints_tcp, *res_tcp;
-char buffer_tcp[MAX_OUTTCP_SIZE+1];
+char buffer_tcp[MAX_OUTTCP_SIZE];
 
 void initTCP(char hostName[], char port[]){
     fd_tcp=socket(AF_INET, SOCK_STREAM, 0);
@@ -39,6 +39,16 @@ char *sendTCP(char *msg, int n_bytes){
     
     buffer_tcp[n_tcp] = '\0';
     return buffer_tcp;
+}
+
+void connectTCP(){
+    connect(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen);
+}
+
+int writeTCP(char *msg){
+    n_tcp=write(fd_tcp, msg, strlen(msg));
+    if(n_tcp==-1) exit(1);
+    return n_tcp;
 }
 
 char *readTCP(int n_bytes){
