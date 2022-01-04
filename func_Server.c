@@ -63,10 +63,14 @@ char* processInput(char *input){
         else{
             sprintf(out, "ERR\n");
         }
-    }/*
-    else if (strcmp(command, "GLM") == 0){
-        out = showMyGroupsS();
     }
+    else if (strcmp(command, "GLM") == 0){
+        if (input[3] == ' ')
+            out = showMyGroupsS(&input[4]);
+        else{
+            sprintf(out, "ERR\n");
+        }
+    }/*
     else if (strcmp(command, "ULS") == 0){
         out = listUsers_GIDS();
     }
@@ -232,10 +236,10 @@ char* unregisterUserS(char *input){
             if (!deleteFile(loginPath)){
                 return "RUN NOK\n";
             }
-            if (deleteFile(passPath) && deleteDir(UIDPath)){
-                printf("UID=%s: unregistered user\n", UID);
-                return "RUN OK\n";
-            }
+        }
+        if (deleteFile(passPath) && deleteDir(UIDPath)){
+            printf("UID=%s: unregistered user\n", UID);
+            return "RUN OK\n";
         }
     }
     return "RUN NOK\n";
@@ -510,16 +514,16 @@ char *subscribeGroupS(char *input){
 
 char *unsubscribeGroupS(char *input){
     if (!validUID(input)){
-        return "RGS E_USR\n";
+        return "RGU E_USR\n";
     }
     if (input[5] != ' '){
-        return "RGS NOK\n";
+        return "RGU NOK\n";
     }
     if (!validGID(&input[6])){
-        return "RGS E_GRP\n";
+        return "RGU E_GRP\n";
     }
     if (input[8] != '\n'){
-        return "RGS NOK\n";
+        return "RGU NOK\n";
     }
 
     char UID[6], GID[3], GName[25];
@@ -543,7 +547,7 @@ char *unsubscribeGroupS(char *input){
         }
         closedir(d_USR);
         if (!valid)
-            return "RGS E_USR\n";
+            return "RGU E_USR\n";
     }
 
     valid = 0;
@@ -555,21 +559,110 @@ char *unsubscribeGroupS(char *input){
             }
             if (i == 99){
                 closedir(d_GRP);
-                return "RGS E_FULL\n";
+                return "RGU E_FULL\n";
             }
             i++;
         }
         closedir(d_GRP);
         if (!valid)
-            return "RGS NOK\n";
+            return "RGU NOK\n";
         
         char GIDPath[24];
         sprintf(GIDPath, "GROUPS/%s/%s.txt", GID, UID);
         if (!deleteFile(GIDPath)){
-            return "RGS NOK\n";
+            return "RGU NOK\n";
         }
 
         printf("UID=%s: unsubscribed group: %s\n", UID, GID);
-        return "RGS OK\n";
+        return "RGU OK\n";
     }
+}
+
+char *showMyGroupsS(char *input){
+
+    if (!validUID(input)){
+        return "RGM E_USR\n";
+    }
+
+    char UID[6];
+    strncpy(UID, input, 5); UID[5] = '\0';
+
+    DIR *d_USR, *d_GRP;
+    struct dirent *dir_usr, *dir_grp;
+    int valid = 0, i = 0;
+
+    d_USR = opendir("USERS");
+    if (d_USR){
+        while ((dir_usr = readdir(d_USR)) != NULL){
+            if (strcmp(dir_usr->d_name, UID) == 0){
+                valid = 1;
+                break;
+            }
+            if (i == 99999)
+                break;
+            i++;
+        }
+        closedir(d_USR);
+        if (!valid)
+            return "RGM E_USR\n";
+    }
+
+    char GNamepath[30], MIDpath[30], UIDPath[30], GID[3], GName[24], MID[5];
+    char list_groups[MAX_OUT_SIZE-6];
+    int n_groups = 0;
+    FILE *fp;
+    char *p = list_groups;
+    d_GRP = opendir("GROUPS");
+
+    if (d_GRP){
+        while ((dir_grp = readdir(d_GRP)) != NULL){
+            if(dir_grp->d_name[0]=='.')
+                continue;
+            if(strlen(dir_grp->d_name)>2)
+                continue;
+            
+            strcpy(GID, dir_grp->d_name); GID[2] = '\0';
+            sprintf(UIDPath,"GROUPS/%s/%s.txt", GID, UID);
+            if(access(UIDPath, F_OK ) != 0 )
+                continue;
+            
+            sprintf(GNamepath,"GROUPS/%s/%s_name.txt", GID, GID);
+            fp=fopen(GNamepath,"r");
+            if(fp){
+                fscanf(fp,"%s", GName);
+                fclose(fp);
+            }
+
+            sprintf(MIDpath, "GROUPS/%s/MSG", GID);
+            DIR *d_msg = opendir(MIDpath);
+            struct dirent *msgdir;
+            if (d_msg){
+                strcpy(MID, "0000");
+                while ((msgdir = readdir(d_msg)) != NULL){
+                    if(msgdir->d_name[0]=='.')
+                        continue;
+                    if(strlen(msgdir->d_name) != 4)
+                        continue;
+                    strcpy(MID, msgdir->d_name);
+                }
+                MID[4] = '\0';
+                closedir(d_msg);
+            }
+
+            size_t offset = sprintf(p, " %s %s %s", GID, GName, MID);
+            p += offset;
+            ++n_groups;
+            if(n_groups==99)
+                break;
+        }
+        closedir(d_GRP);
+
+        if (n_groups == 0)
+            sprintf(out, "RGM 0\n");
+        else{
+            sprintf(out, "RGM %d%s\n", n_groups, list_groups);
+        }
+        return out;
+    }
+
 }
