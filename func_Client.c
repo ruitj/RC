@@ -513,7 +513,7 @@ void postMessage(char *input){
         while(!feof(fptr)) {
             fread(buffer, 1024, 1, fptr);
             writeTCP(buffer);
-            bzero(buffer, sizeof(buffer));
+            bzero(buffer, 2048);
         }
         fclose(fptr);
     }
