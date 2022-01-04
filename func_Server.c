@@ -146,7 +146,7 @@ int deleteDir(char *path){
 }
 
 char* registerUserS(char *input){
-    char userID[6], password[9], user_dirname[15];
+    char UID[6], password[9], user_dirname[15];
 
     int file_count = 0;
     DIR * dirp;
@@ -175,9 +175,9 @@ char* registerUserS(char *input){
         return "RRG NOK\n";
     }
 
-    strncpy(userID, input,5); userID[5] = '\0';
+    strncpy(UID, input,5); UID[5] = '\0';
     strncpy(password, &input[6],8); password[8] = '\0';
-    sprintf(user_dirname,"USERS/%s",userID);
+    sprintf(user_dirname,"USERS/%s",UID);
     if(access(user_dirname, F_OK ) == 0 ){
         
         sprintf(out,"RRG DUP\n");
@@ -186,12 +186,13 @@ char* registerUserS(char *input){
         char user_password[30];
     
         mkdir(user_dirname,0700);
-        sprintf(user_password,"USERS/%s/%s_pass.txt",userID,userID);
+        sprintf(user_password,"USERS/%s/%s_pass.txt",UID,UID);
         FILE *password_file;
         password_file=fopen(user_password,"w");
         fputs(password,password_file);
         fclose(password_file);
         sprintf(out,"RRG OK\n");
+        printf("UID=%s: new user\n", UID);
     }
     return out;
 }
@@ -226,22 +227,20 @@ char* unregisterUserS(char *input){
 
     if(strcmp(password,realPassword)==0){
         if(access(loginPath, F_OK ) == 0 ){
-            if(deleteFile(loginPath) && deleteFile(passPath) && deleteDir(UIDPath)){
-                return "RUN OK\n";
+            if (!deleteFile(loginPath)){
+                return "RUN NOK\n";
             }
-        }
-        else{
-            if(deleteFile(passPath) && deleteDir(UIDPath)){
+            if (deleteFile(passPath) && deleteDir(UIDPath)){
+                printf("UID=%s: unregistered user\n", UID);
                 return "RUN OK\n";
             }
         }
     }
     return "RUN NOK\n";
-
 }
 
 char* loginUserS(char *input){
-    char userID[6],password[9],pass_dir[40],file_password[10], user_dirname[31];
+    char UID[6],password[9],pass_dir[40],file_password[10], user_dirname[31];
     FILE *password_ptr;
 
     if (!validUID(input)){
@@ -254,12 +253,12 @@ char* loginUserS(char *input){
         return "RLO NOK\n";
     }
 
-    strncpy(userID,input,5); userID[5] = '\0';
+    strncpy(UID,input,5); UID[5] = '\0';
     strncpy(password,&input[6],8); password[8] = '\0';
 
-    sprintf(user_dirname,"USERS/%s",userID);
+    sprintf(user_dirname,"USERS/%s",UID);
 
-    sprintf(pass_dir,"USERS/%s/%s_pass.txt",userID,userID);
+    sprintf(pass_dir,"USERS/%s/%s_pass.txt",UID,UID);
     if(access(user_dirname, F_OK ) == 0 ){
         password_ptr=fopen(pass_dir,"r");
         if(fgets(file_password,9,password_ptr)==NULL){
@@ -267,19 +266,18 @@ char* loginUserS(char *input){
         }
         fclose(password_ptr);
         file_password[8]='\0';
+
         if(memcmp(file_password,password,9)==0){
             sprintf(out,"RLO OK\n");
-       
-        //sprintf(user_dirname,"USERS/%s/%s_pass.txt",userID,userID);
-        sprintf(user_dirname,"USERS/%s/%s_login.txt",userID,userID);
-        //puts(user_dirname);
-        FILE *login_ptr;
-        login_ptr=fopen(user_dirname,"w");
-        if(login_ptr==NULL){
-            sprintf(out,"ERR\n");
-        }
-        fclose(login_ptr);
-            
+            sprintf(user_dirname,"USERS/%s/%s_login.txt",UID,UID);
+            FILE *login_ptr = fopen(user_dirname,"w");
+            if(login_ptr==NULL){
+                sprintf(out,"ERR\n");
+            }
+            else{
+                printf("UID=%s: login ok\n", UID);
+            }
+            fclose(login_ptr);
         }
         else{
             sprintf(out,"RLO NOK\n");
@@ -320,6 +318,7 @@ char *logoutUserS(char* input){
 
     if(strcmp(password,realPassword)==0){
         if(deleteFile(pathname)){
+            printf("UID=%s: logout ok\n", UID);
             return "ROU OK\n";
         }
         else{
@@ -327,6 +326,7 @@ char *logoutUserS(char* input){
         }
     }
     else{
+
         return "ROU NOK\n";
     }
 }
