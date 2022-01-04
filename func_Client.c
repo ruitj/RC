@@ -46,6 +46,15 @@ int validGName(char *input){
     return 1;
 }
 
+int appendtoFile(char *filename, char *content){
+    FILE *fp;
+    if((fp = fopen(filename, "ab+")) != NULL){
+        fputs(content, fp);
+        return 1;
+    }
+    return 0;
+}
+
 void registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
 
@@ -443,8 +452,8 @@ void listUsers_GID(){
     closeTCP();
 }
 
-void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[2048], input_temp[MAX_TEXT_SIZE];
+/*void postMessage(char *input){
+    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[99999], input_temp[MAX_TEXT_SIZE];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;;
     FILE *fptr;
 
@@ -464,7 +473,7 @@ void postMessage(char *input){
     }
     while(input_temp[i] != '\n'){
         if(input_temp[i] == '"'){
-            if(input_temp[i+1] == ' '){
+            if((input_temp[i+1] == ' ')){
                 duasAspas = 1;
                 spaceIndex = i+1;
                 withFile = 1;
@@ -488,52 +497,36 @@ void postMessage(char *input){
         return;
     }
     if(withFile == 0){
-        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
+        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text)+1, text);
         printf("in a mandar: %s",in);
-        connectTCP();
-        writeTCP(in);
     }
     else{
         strcpy(FName,&input_temp[spaceIndex+1]);
-        FName[strlen(FName)-1] = '\0';
         fptr = fopen(FName,"rb");
-        if (fptr == NULL){
-            printf("Error: file cannot be opened\n");
-            closeTCP();
-            fclose(fptr);
-            return;
-        }
-        fseek(fptr,0,SEEK_END);
+        //seg fault no fread
+        fread(buffer,sizeof(buffer),1,fptr);
+        fseek(fptr, 0, SEEK_END);
+        //para o malloc depois 
         sizeFile = ftell(fptr);
-        fseek(fptr,0,SEEK_SET);
-        //falta enviar o ficheiro
-        sprintf(in, "PST %s %s %lu %s %s %d ", savedUID, savedGID, strlen(text), text, FName, sizeFile);
-        connectTCP();
-        writeTCP(in);
-        while(!feof(fptr)) {
-            fread(buffer, 1024, 1, fptr);
-            writeTCP(buffer);
-            bzero(buffer, 2048);
-        }
-        fclose(fptr);
+
+        sprintf(in, "PST %s %s %lu %s %s %d %s\n", savedUID, savedGID, strlen(text), text, FName, sizeFile, buffer);
+        printf("in a mandar: %s",in);
     }
 
-    status = readTCP(9);
+    status = sendTCP(in, 9);
 
     if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
-        closeTCP();
-        return;
-    }
-    
-    status[strlen(status)-1] = '\0';
-    printf("Posted message %s to group %s\n", &status[4], savedGID);
+
+    printf("Posted message %s to group %s", &status[4], savedGID);
     closeTCP();
+    return;
+}*/
+
+void postMessage(char *input){
     return;
 }
 
@@ -629,12 +622,22 @@ void retrieveMessages(char *input){
             }
             FSize[j] = '\0';
 
-            int size = atoi(FSize);
+            int size = atoi(FSize); 
+            char *content;
             while (size > MAX_OUTTCP_SIZE){
-                readTCP(MAX_OUTTCP_SIZE);
+                content = readTCP(MAX_OUTTCP_SIZE);
+                if (!appendtoFile(FName, content)){
+                    printf("Error: unable to store file\n");
+                    exit(1);
+                }
                 size -= MAX_OUTTCP_SIZE;
             }
-            readTCP(size+1);
+            content = readTCP(size);
+            if (!appendtoFile(FName, content)){
+                printf("Error: unable to store file\n");
+                exit(1);
+            }
+            readTCP(1);
 
             printf("; file stored: %s", FName);
 

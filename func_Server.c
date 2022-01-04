@@ -418,6 +418,7 @@ char *subscribeGroupS(char *input){
                 break;
             i++;
         }
+        closedir(d_USR);
         if (!valid)
             return "RGS E_USR\n";
     }
@@ -426,25 +427,33 @@ char *subscribeGroupS(char *input){
     if (d_GRP){
         if (strcmp(GID, "00") != 0){
             while ((dir_grp = readdir(d_GRP)) != NULL){
+                printf("ok\n");
+                printf("dir found, going to compare strings: %s %s\n", dir_grp->d_name, GID);
                 if (strcmp(dir_grp->d_name, GID) == 0){
                     char *GNamepath;
                     sprintf("GROUPS/%s/%s_name.txt", GID, GID);
+                    printf("sprintf groupname ok\n");
                     FILE *fp = fopen(GNamepath, "r");
                     char *content;
                     if (fp){
+                        printf("before scanffile\n");
                         fscanf(fp,"%s", content);
                         fclose(fp);
+                        printf("scanf ok\n");
                         if (strcmp(content, GName) == 0){
                             valid = 1;
-                            break;
                         }
                     }
+                    break;
                                     
                 }
-                if (i == 99)
+                if (i == 99){
+                    closedir(d_GRP);
                     return "RGS E_FULL\n";
+                }
                 i++;
             }
+            closedir(d_GRP);
             if (!valid)
                 return "RGS NOK\n";
 
@@ -456,12 +465,12 @@ char *subscribeGroupS(char *input){
         }
         else{
             char newGID[3];
-            strcpy(newGID, "01");
-            newGID[2] = '\0';
+            strcpy(newGID, "01"); newGID[2] = '\0';
             while ((dir_grp = readdir(d_GRP)) != NULL){
                 strncpy(newGID, dir_grp->d_name, 2);
                 newGID[2] = '\0';
             }
+            closedir(d_GRP);
             if (atoi(newGID) == 99)
                 return "RGS E_FULL\n";
             int next = atoi(newGID) + 1;
