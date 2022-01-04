@@ -134,11 +134,6 @@ void unregisterUser(char *input){
 
 void loginUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
-    
-    if (loggedin){
-        printf("Error: User already logged in\n");
-        return;
-    }
 
     if (!validUID(input)){
         printf("Error: Invalid input format\n");
@@ -265,7 +260,7 @@ void subscribeGroup(char *input){
     char GID[MAX_GID_SIZE], GName[MAX_GNAME_SIZE];
     sscanf(input, "%s %s", GID, GName);
 
-    if (input[0] == '0'){
+    if ((input[0] == '0') && (input[1] == ' ')){
         strcpy(GID, "00");
         GID[2] = '\0';
     }
@@ -452,8 +447,8 @@ void listUsers_GID(){
     closeTCP();
 }
 
-/*void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[99999], input_temp[MAX_TEXT_SIZE];
+void postMessage(char *input){
+    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[2048], input_temp[MAX_TEXT_SIZE];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;;
     FILE *fptr;
 
@@ -473,7 +468,7 @@ void listUsers_GID(){
     }
     while(input_temp[i] != '\n'){
         if(input_temp[i] == '"'){
-            if((input_temp[i+1] == ' ')){
+            if(input_temp[i+1] == ' '){
                 duasAspas = 1;
                 spaceIndex = i+1;
                 withFile = 1;
@@ -497,36 +492,55 @@ void listUsers_GID(){
         return;
     }
     if(withFile == 0){
-        sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text)+1, text);
-        printf("in a mandar: %s",in);
+        //sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
+        //printf("in a mandar: %s",in);
+        connectTCP();
+        writeTCP(in);
     }
     else{
         strcpy(FName,&input_temp[spaceIndex+1]);
+        FName[strlen(FName)-1] = '\0';
         fptr = fopen(FName,"rb");
-        //seg fault no fread
-        fread(buffer,sizeof(buffer),1,fptr);
-        fseek(fptr, 0, SEEK_END);
-        //para o malloc depois 
+        if (fptr == NULL){
+            printf("Error: file cannot be opened\n");
+            closeTCP();
+            fclose(fptr);
+            return;
+        }
+        fseek(fptr,0,SEEK_END);
         sizeFile = ftell(fptr);
-
-        sprintf(in, "PST %s %s %lu %s %s %d %s\n", savedUID, savedGID, strlen(text), text, FName, sizeFile, buffer);
-        printf("in a mandar: %s",in);
+        fseek(fptr,0,SEEK_SET);
+        //falta enviar o ficheiro
+        sprintf(in, "PST %s %s %lu %s %s %d ", savedUID, savedGID, strlen(text), text, FName, sizeFile);
+        connectTCP();
+        writeTCP(in);
+        while(!feof(fptr)) {
+            fread(buffer, 1024, 1, fptr);
+            writeTCP(buffer);
+            bzero(buffer, 2048);
+            //printf("dentro ciclo\n");
+        }
+        //printf("fora ciclo\n");
+        fclose(fptr);
     }
-
-    status = sendTCP(in, 9);
+    //printf("antes read\n");
+    status = readTCP(9);
+    //printf("depois read\n");
 
     if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
+    else if (strcmp(status, "ERR\n") == 0){
+        printf("Error: unexpected protocol message\n");
+        closeTCP();
+        return;
+    }
 
-    printf("Posted message %s to group %s", &status[4], savedGID);
+    status[strlen(status)-1] = '\0';
+    printf("Posted message %s to group %s\n", &status[4], savedGID);
     closeTCP();
-    return;
-}*/
-
-void postMessage(char *input){
     return;
 }
 
@@ -568,7 +582,7 @@ void retrieveMessages(char *input){
         return;
     }
 
-    out = readTCP(5); // reads number of messages retrieved
+    out = readTCP(3); // reads number of messages retrieved
     printf("%s message(s) retrieved:\n", out);
     int n_msgs = atoi(out);
     int n_read = 0; // msgs already read
@@ -622,7 +636,7 @@ void retrieveMessages(char *input){
             }
             FSize[j] = '\0';
 
-            int size = atoi(FSize); 
+            int size = atoi(FSize);
             char *content;
             while (size > MAX_OUTTCP_SIZE){
                 content = readTCP(MAX_OUTTCP_SIZE);

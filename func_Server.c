@@ -135,16 +135,16 @@ int createFile(char *path, char *content){
 
 int deleteFile(char *path){
     if(unlink(path)==0)
-        return(1);
+        return 1;
     else
-        return(0);
+        return 0;
 }
 
 int deleteDir(char *path){
     if(rmdir(path)==0)
-        return(1);
+        return 1;
     else
-        return(0);
+        return 0;
 }
 
 char* registerUserS(char *input){
@@ -365,6 +365,10 @@ char *showAvailableGroupsS(){
             if (d_msg){
                 strcpy(MID, "0000");
                 while ((msgdir = readdir(d_msg)) != NULL){
+                    if(msgdir->d_name[0]=='.')
+                        continue;
+                    if(strlen(msgdir->d_name) != 4)
+                        continue;
                     strcpy(MID, msgdir->d_name);
                 }
                 MID[4] = '\0';
@@ -377,6 +381,7 @@ char *showAvailableGroupsS(){
                 break;
         }
         closedir(d);
+
         sprintf(out, "RGL %d%s\n", n_groups, list_groups);
         return out;
     }
@@ -429,19 +434,14 @@ char *subscribeGroupS(char *input){
     if (d_GRP){
         if (strcmp(GID, "00") != 0){
             while ((dir_grp = readdir(d_GRP)) != NULL){
-                printf("ok\n");
-                printf("dir found, going to compare strings: %s %s\n", dir_grp->d_name, GID);
                 if (strcmp(dir_grp->d_name, GID) == 0){
-                    char *GNamepath;
-                    sprintf("GROUPS/%s/%s_name.txt", GID, GID);
-                    printf("sprintf groupname ok\n");
+                    char GNamepath[24];
+                    sprintf(GNamepath, "GROUPS/%s/%s_name.txt", GID, GID);
                     FILE *fp = fopen(GNamepath, "r");
-                    char *content;
+                    char content[26];
                     if (fp){
-                        printf("before scanffile\n");
                         fscanf(fp,"%s", content);
                         fclose(fp);
-                        printf("scanf ok\n");
                         if (strcmp(content, GName) == 0){
                             valid = 1;
                         }
@@ -459,10 +459,12 @@ char *subscribeGroupS(char *input){
             if (!valid)
                 return "RGS NOK\n";
 
-            char *GUIDpath;
+            char GUIDpath[20];
             sprintf(GUIDpath, "GROUPS/%s/%s.txt", GID, UID);
             if (!createFile(GUIDpath, UID))
                 return "RGS NOK\n";
+
+            printf("UID=%s: subscribed group: %s - \"%s\"\n", UID, GID, GName);
             return "RGS OK\n";
         }
         else{
@@ -481,20 +483,25 @@ char *subscribeGroupS(char *input){
             else
                 sprintf(newGID, "%d", next);
 
-            char *GRPpath;
+            char GRPpath[30];
             sprintf(GRPpath,"GROUPS/%s",newGID);
             if (!createDir(GRPpath))
                 return "RGS NOK\n";
 
             sprintf(GRPpath, "GROUPS/%s/%s_name.txt", newGID, newGID);
-            if (!createFile(GRPpath, newGID))
+            if (!createFile(GRPpath, GName))
                 return "RGS NOK\n";
 
             sprintf(GRPpath, "GROUPS/%s/%s.txt", newGID, UID);
             if (!createFile(GRPpath, UID))
                 return "RGS NOK\n";
 
-            sprintf(out, "NEW %s\n", newGID);
+            sprintf(GRPpath, "GROUPS/%s/MSG", newGID);
+            if (!createDir(GRPpath))
+                return "RGS NOK\n";
+
+            printf("UID=%s: new group: %s - \"%s\"\n", UID, newGID, GName);
+            sprintf(out, "RGS NEW %s\n", newGID);
             return out;
         }
     }
