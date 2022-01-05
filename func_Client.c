@@ -136,7 +136,7 @@ void loginUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
     
     if (loggedin){
-        printf("User already logged in\n");
+        printf("User UID=%s already logged in\n", savedUID);
         return;
     }
 
