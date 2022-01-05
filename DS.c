@@ -24,10 +24,10 @@ int max(int x, int y){
 
 int main(){
 
-    int listenfd, connfd, udpfd, nready, maxfdp1;
+    int listenfd, connfd, udpfd,nready, maxfdp1;
     char buffer[MAX_OUT_SIZE];
     fd_set rset;
-    ssize_t n;
+    
     socklen_t len;
     struct sockaddr_in cliaddr, servaddr;
     char *out;
@@ -62,7 +62,7 @@ int main(){
  
         // select the ready descriptor
         nready = select(maxfdp1, &rset, NULL, NULL, NULL);
- 
+        if(nready){
         // if tcp socket is readable then handle
         // it by accepting the connection
         if (FD_ISSET(listenfd, &rset)) {
@@ -71,18 +71,27 @@ int main(){
             close(listenfd);
             bzero(buffer, sizeof(buffer));
             printf("Message From TCP client: ");
-            read(connfd, buffer, sizeof(buffer));
+            if(read(connfd, buffer, sizeof(buffer))){
             puts(buffer);
-            write(connfd, (const char*)buffer, sizeof(buffer));
-            close(connfd);
+            if(!write(connfd, (const char*)buffer, sizeof(buffer))){
+                close(connfd);
+                continue;
+                }
+            }
+            else
+                continue;
         }
         // if udp socket is readable receive the message.
         if (FD_ISSET(udpfd, &rset)) {
             len = sizeof(cliaddr);
             bzero(buffer, sizeof(buffer));
-            n = recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len);
+            if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
             out = processInput(buffer);
             sendto(udpfd, (const char*)out, strlen(out), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
+            }
+            else
+                continue;
+        }
         }
     }
     return 0;

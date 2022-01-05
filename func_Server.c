@@ -8,10 +8,10 @@
 #include <sys/types.h>
 #include "func_Server.h"
 
-char out[MAX_OUT_SIZE];
+char out[MAX_OUT_SIZE+10];
 
 char* processInput(char *input){
-    char command[4], *out;
+    char command[4], *out=NULL;
     strncpy(command, input, 3);
     command[3] = '\0';
 
@@ -83,7 +83,10 @@ char* processInput(char *input){
     else{
         sprintf(out, "ERR\n");
     }
-    return out;
+    if(out!=NULL)
+        return out;
+    else
+        return " ";
 }
 
 int validUID(char *input){
@@ -228,7 +231,9 @@ char* unregisterUserS(char *input){
     sprintf(passPath,"USERS/%s/%s_pass.txt",UID,UID);
     sprintf(UIDPath,"USERS/%s",UID);
     pass_txt = fopen(passPath, "r");
-    fscanf(pass_txt, "%s", realPassword);
+    if(fscanf(pass_txt, "%s", realPassword)==0){
+        exit(0);
+    }
     fclose(pass_txt);
 
     if(strcmp(password,realPassword)==0){
@@ -317,7 +322,9 @@ char *logoutUserS(char* input){
 
     sprintf(pathname,"USERS/%s/%s_pass.txt",UID,UID);
     pass_txt = fopen(pathname, "r");
-    fscanf(pass_txt, "%s", realPassword);
+    if(fscanf(pass_txt, "%s", realPassword)==0){
+        exit(0);
+    }
     fclose(pass_txt);
 
     sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
@@ -360,7 +367,10 @@ char *showAvailableGroupsS(){
             sprintf(GNamepath,"GROUPS/%s/%s_name.txt", GID, GID);
             fp=fopen(GNamepath,"r");
             if(fp){
-                fscanf(fp,"%s", GName);
+                if(fscanf(fp,"%s", GName)==0){
+                fclose(fp);
+                exit(0);
+                }
                 fclose(fp);
             }
             sprintf(MIDpath, "GROUPS/%s/MSG", GID);
@@ -389,6 +399,7 @@ char *showAvailableGroupsS(){
         sprintf(out, "RGL %d%s\n", n_groups, list_groups);
         return out;
     }
+    return " ";
 }
 
 char *subscribeGroupS(char *input){
@@ -444,7 +455,9 @@ char *subscribeGroupS(char *input){
                     FILE *fp = fopen(GNamepath, "r");
                     char content[26];
                     if (fp){
-                        fscanf(fp,"%s", content);
+                        if(fscanf(fp,"%s", content)==0){
+                            exit(0);
+                        }
                         fclose(fp);
                         if (strcmp(content, GName) == 0){
                             valid = 1;
@@ -472,8 +485,8 @@ char *subscribeGroupS(char *input){
             return "RGS OK\n";
         }
         else{
-            char newGID[3];
-            strcpy(newGID, "01"); newGID[2] = '\0';
+            char newGID[8];
+            strcpy(newGID, "01"); newGID[3] = '\0';
             while ((dir_grp = readdir(d_GRP)) != NULL){
                 strncpy(newGID, dir_grp->d_name, 2);
                 newGID[2] = '\0';
@@ -481,13 +494,15 @@ char *subscribeGroupS(char *input){
             closedir(d_GRP);
             if (atoi(newGID) == 99)
                 return "RGS E_FULL\n";
-            int next = atoi(newGID) + 1;
+            short next = atoi(newGID) + 1;
+            char char_next[7];
+            sprintf(char_next,"%d",next);
             if (next < 10)
-                sprintf(newGID, "0%d", next);
+                sprintf(newGID, "0%s", char_next);
             else
-                sprintf(newGID, "%d", next);
+                sprintf(newGID, "%s", char_next);
 
-            char GRPpath[30];
+            char GRPpath[37];
             sprintf(GRPpath,"GROUPS/%s",newGID);
             if (!createDir(GRPpath))
                 return "RGS NOK\n";
@@ -509,7 +524,7 @@ char *subscribeGroupS(char *input){
             return out;
         }
     }
-
+    return " ";
 }
 
 char *unsubscribeGroupS(char *input){
@@ -526,7 +541,7 @@ char *unsubscribeGroupS(char *input){
         return "RGU NOK\n";
     }
 
-    char UID[6], GID[3], GName[25];
+    char UID[6], GID[3];
 
     strncpy(UID, input, 5); UID[5] = '\0';
     strncpy(GID, &input[6], 2); GID[2] = '\0';
@@ -576,6 +591,7 @@ char *unsubscribeGroupS(char *input){
         printf("UID=%s: unsubscribed group: %s\n", UID, GID);
         return "RGU OK\n";
     }
+    return " ";
 }
 
 char *showMyGroupsS(char *input){
@@ -629,7 +645,9 @@ char *showMyGroupsS(char *input){
             sprintf(GNamepath,"GROUPS/%s/%s_name.txt", GID, GID);
             fp=fopen(GNamepath,"r");
             if(fp){
-                fscanf(fp,"%s", GName);
+                if(fscanf(fp,"%s", GName)==0){
+                    exit(0);
+                }
                 fclose(fp);
             }
 
@@ -664,5 +682,5 @@ char *showMyGroupsS(char *input){
         }
         return out;
     }
-
+    return " ";
 }
