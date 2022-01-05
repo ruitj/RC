@@ -522,7 +522,7 @@ void postMessage(char *input){
         writeTCP(in);
         nleft = sizeFile;
         while(nleft>0){
-            fread(buffer, 512, 1, fptr);
+            if(fread(buffer, 512, 1, fptr)){
             sendBuffer = &buffer[0];
             nwritten = writeTCP(sendBuffer);
             if(nwritten<0){
@@ -531,6 +531,7 @@ void postMessage(char *input){
             }
             nleft -= nwritten;
             sendBuffer += nwritten;
+            }
         }
         fclose(fptr);
     }

@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include "func_Server.h"
 
-char out[MAX_OUT_SIZE+10];
+char out[MAX_OUT_SIZE];
 
 char* processInput(char *input){
     char command[4], *out=NULL;
@@ -86,7 +86,7 @@ char* processInput(char *input){
     if(out!=NULL)
         return out;
     else
-        return " ";
+        return "ERR\n";
 }
 
 int validUID(char *input){
@@ -345,7 +345,7 @@ char *logoutUserS(char* input){
 }
 
 char *showAvailableGroupsS(){
-    char list_groups[MAX_OUT_SIZE-6];
+    char list_groups[MAX_OUT_SIZE-20];
     char GNamepath[30], MIDpath[30], GID[3], GName[24], MID[5];
     DIR *d;
     struct dirent *dir;
@@ -524,7 +524,7 @@ char *subscribeGroupS(char *input){
             return out;
         }
     }
-    return " ";
+    return "RGS NOK\n";
 }
 
 char *unsubscribeGroupS(char *input){
@@ -591,7 +591,7 @@ char *unsubscribeGroupS(char *input){
         printf("UID=%s: unsubscribed group: %s\n", UID, GID);
         return "RGU OK\n";
     }
-    return " ";
+    return "RGU NOK\n";
 }
 
 char *showMyGroupsS(char *input){
@@ -624,7 +624,7 @@ char *showMyGroupsS(char *input){
     }
 
     char GNamepath[30], MIDpath[30], UIDPath[30], GID[3], GName[24], MID[5];
-    char list_groups[MAX_OUT_SIZE-6];
+    char list_groups[MAX_OUT_SIZE-20];
     int n_groups = 0;
     FILE *fp;
     char *p = list_groups;
@@ -682,5 +682,5 @@ char *showMyGroupsS(char *input){
         }
         return out;
     }
-    return " ";
+    return "RGM E_USR\n";
 }
