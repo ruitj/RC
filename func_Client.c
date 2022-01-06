@@ -621,7 +621,7 @@ void retrieveMessages(char *input){
         int size = atoi(TSize);
         out = readTCP(size);
         strcpy(text, out);
-        text[size-1] = '\0'; // remove \n
+        text[size] = '\0';
 
         printf("%s - \"%s\"", MID, text);
 
