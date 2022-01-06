@@ -71,15 +71,10 @@ int main(){
             close(listenfd);
             bzero(buffer, sizeof(buffer));
             printf("Message From TCP client: ");
-            if(read(connfd, buffer, sizeof(buffer))){
+            processInputTCP(connfd);
             puts(buffer);
-            if(!write(connfd, (const char*)buffer, sizeof(buffer))){
-                close(connfd);
-                continue;
-                }
-            }
-            else
-                continue;
+            write(connfd, (const char*)buffer, sizeof(buffer));
+            close(connfd);
         }
         // if udp socket is readable receive the message.
         if (FD_ISSET(udpfd, &rset)) {
