@@ -724,7 +724,7 @@ char *showMyGroupsS(char *input){
 
 //EM DESENVOLVIMENTO    
 char *postMessageS(int connfd){
-    char UID[6],GID[3],textSizeC[4], temp[MAX_TEXT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE],*out=NULL;
+    char UID[6],GID[3],textSizeC[4],temp[MAX_TEXT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE],*out=NULL;
     int i=0, textSize, withFile = 0, fileSize=0;
 
     //get UID
@@ -774,9 +774,9 @@ char *postMessageS(int connfd){
     textSize = atoi(textSizeC);
     printf("textSize recebido: %d\n",textSize);
 
-    //get textsize
+    //get text
     readnbytes(connfd, textSize, text);
-    text[textSize+1] = '\0';
+    text[textSize] = '\0';
     printf("text recebido: %s\n",text);
     
     //get whitespace to see if it has a file or not
@@ -785,6 +785,8 @@ char *postMessageS(int connfd){
         withFile=1;
     }
     temp[0] = '\0';
+
+    printf("tem file?- %d\n",withFile);
 
     if(withFile){
         //get FName
@@ -826,51 +828,114 @@ char *postMessageS(int connfd){
             return out;
         }
         temp[0] = '\0';
-
-        //read file
     }
-    DIR *d_GRP, *d_GID, *d_MSG;
-    struct dirent *dir_grp, *dir_gid, *dir_msg;
-    int valid = 0;
-    char UIDfname[10], lastMID[6];
+    DIR *d_GRP, *d_GID, *d_MSG, *d_MID;
+    struct dirent *dir_grp, *dir_gid, *dir_msg, *dir_mid;
+    int valid = 0, MID=0;
+    char UIDfname[20], MID_C[5],MIDpath[19],filePath[45],GIDpath[9],MSGpath[13];
+
     d_GRP = opendir("GROUPS");
     if (d_GRP){
+        printf("GROUPS opened\n");
         while ((dir_grp = readdir(d_GRP)) != NULL){
             //check if group exists
             if (strcmp(dir_grp->d_name, GID) == 0){
+                printf("Group id is found\n");
                 //open group folder
-                d_GID = opendir(GID);
+                sprintf(GIDpath, "GROUPS/%s",GID);
+                d_GID = opendir(GIDpath);
                 if (d_GID){
+                    printf("Group id is opened\n");
                     //check if user is subscribed to group
-                    sprintf(UIDfname, "%s.txt", UID);
+                    sprintf(UIDfname, "GROUPS/%s/%s.txt", GID, UID);
                     if(access(UIDfname,F_OK)==0){
-                        break;
+                        printf("user is subscribed to group\n");
                     }
                     else{
                         sprintf(out, "RPT NOK\n");
                         return out;
                     }
+                    printf("antes sprintf\n");
                     //open MSG folder
-                    d_MSG = opendir("MSG");
-                    if (d_GID){
-                        strcpy(lastMID,"0000\0");
+                    sprintf(MSGpath, "GROUPS/%s/MSG",GID);
+                    //printf("msg path: %s\n",MSGpath);
+                    d_MSG = opendir(MSGpath);
+                    if (d_MSG){
+
+                        printf("msg folder opened\n");
+
+                        //get next MID
+                        strcpy(MID_C,"0000\0");
                         while ((dir_msg = readdir(d_MSG)) != NULL){
-                            strcpy(lastMID,dir_msg->d_name);
+                            strcpy(MID_C,dir_msg->d_name);
                         }
+                        MID = atoi(MID_C)+1;
+
+                        printf("MID novo: %d\n",MID);
+
+                        if(getIntLength(MID) == 1){
+                            sprintf(MID_C, "000%d", MID);
+                        }
+                        else if(getIntLength(MID) == 2){
+                            sprintf(MID_C, "00%d", MID);
+                        }
+                        else if(getIntLength(MID) == 3){
+                            sprintf(MID_C, "0%d", MID);
+                        }
+                        else if(getIntLength(MID) == 4){
+                            sprintf(MID_C, "%d", MID);
+                        }
+
+                        printf("ready to create DIR\n");
+
+                        sprintf(MIDpath, "GROUPS/%s/MSG/%s", GID, MID_C);
+
+                        printf("mid path %s\n",MIDpath);
+
+                        //create MID folder
+                        if(!createDir(MIDpath))
+                            return "RPT NOK\n";
+
+                        printf("mid folder created\n");
+
+                        //open MID folder
+                        d_MID = opendir(MIDpath);
+                        if (d_MID){
+
+                            printf("mid folder opened\n");
+
+                            //create Author, Text (and File) files
+                            sprintf(filePath, "GROUPS/%s/MSG/%s/A U T H O R.txt",GID, MID_C);
+                            if (!createFile(filePath, UID))
+                                return "RPT NOK\n";
+                            filePath[0] = '\0';
+
+                            sprintf(filePath, "GROUPS/%s/MSG/%s/T E X T.txt",GID, MID_C);
+                            if (!createFile(filePath, text))
+                                return "RPT NOK\n";
+                            filePath[0] = '\0';
+
+                            if(withFile){
+                            //if there's a file attached to the message
+                            //read from tcp
+                            }
+                            closedir(d_MID);
+                        }
+                        closedir(d_MSG);
                     }
+                    closedir(d_GID);
                 }
             }
+            
         }
-        /*closedir(d_GRP);
-        if (!valid)
-            return "RGS NOK\n";
-
-        char GUIDpath[20];
-        sprintf(GUIDpath, "GROUPS/%s/%s.txt", GID, UID);
-        if (!createFile(GUIDpath, UID))
-            return "RGS NOK\n";
-
-        printf("UID=%s: subscribed group: %s - \"%s\"\n", UID, GID, GName);
-        return "RPT OK\n";*/
+        closedir(d_GRP);
+        if (withFile){
+            printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
+        }
+        else{
+            printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
+        }
+        return "RPT OK\n";
     }
+    return "RPT OK\n";
 }
