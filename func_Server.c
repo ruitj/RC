@@ -4,11 +4,9 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <ctype.h>
-#include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "func_Server.h"
-#include "Client.h"
 
 char out[MAX_OUT_SIZE];
 
@@ -91,42 +89,6 @@ char* processInput(char *input){
         return "ERR\n";
 }
 
-char *processInputTCP(int connfd){
-    char *out,command[5];
-
-    readnbytes(connfd, 4, command);
-    command[4] = '\0';
-    printf("comando recebido: %s\n",command);
-
-    if(strcmp(command, "PST ")==0){
-        out = postMessageS(connfd);
-        return out;
-    }
-    else if(strcmp(command, "RTV ")==0){
-        printf("RTV identificado\n");
-    }
-    else if(strcmp(command, "ULS ")==0){
-        printf("ULS identificado\n");
-    }
-    else{
-        printf("Error: wrong message format\n");
-    }
-}
-
-char *readnbytes(int connfd, int nbytes, char *socketread){
-    int readbytes=0,result;
-
-    while (readbytes < nbytes){
-        result = read(connfd, socketread + readbytes, nbytes - readbytes);
-        if (result < 1){
-            printf("erro no readnbytes\n");
-            break;
-        }
-        readbytes += result;
-    }
-    return socketread;
-}
-
 int validUID(char *input){
     for (int i = 0; ((input[i] != ' ') && (input[i] != '\n'));i++){
         if ((!isdigit(input[i])) || (i >= 5))
@@ -190,10 +152,6 @@ int deleteDir(char *path){
         return 1;
     else
         return 0;
-}
-
-int getIntLength(int i){
-    return (floor(log10(abs(i))) + 1);
 }
 
 char* registerUserS(char *input){
@@ -527,22 +485,23 @@ char *subscribeGroupS(char *input){
             return "RGS OK\n";
         }
         else{
-            char newGID[8];
-            strcpy(newGID, "01"); newGID[3] = '\0';
+            int nextGID = 1;
+            short int max = 1;
             while ((dir_grp = readdir(d_GRP)) != NULL){
-                strncpy(newGID, dir_grp->d_name, 2);
-                newGID[2] = '\0';
+                nextGID = atoi(dir_grp->d_name);
+                if (nextGID > max)
+                    max = nextGID;
             }
             closedir(d_GRP);
-            if (atoi(newGID) == 99)
+            
+            if (max == 99)
                 return "RGS E_FULL\n";
-            short next = atoi(newGID) + 1;
-            char char_next[7];
-            sprintf(char_next,"%d",next);
-            if (next < 10)
-                sprintf(newGID, "0%s", char_next);
+            max++;
+            char newGID[8];
+            if (max < 10)
+                sprintf(newGID, "0%d", max);
             else
-                sprintf(newGID, "%s", char_next);
+                sprintf(newGID, "%d", max);
 
             char GRPpath[37];
             sprintf(GRPpath,"GROUPS/%s",newGID);
@@ -725,222 +684,4 @@ char *showMyGroupsS(char *input){
         return out;
     }
     return "RGM E_USR\n";
-}
-
-//EM DESENVOLVIMENTO    
-char *postMessageS(int connfd){
-    char UID[6],GID[3],textSizeC[4],temp[MAX_TEXT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE],*out=NULL;
-    int i=0, textSize, withFile = 0, fileSize=0;
-
-    //get UID
-    readnbytes(connfd, 5, UID);
-    UID[5] = '\0';
-    printf("uid recebido: %s\n",UID);
-
-    /*if(!validUID(UID)){
-        sprintf(out, "RPT NOK\n");
-        return out;
-    }*/
-
-    //get whitespace
-    readnbytes(connfd,1,temp);
-    if(temp[0] != ' '){
-        sprintf(out, "RPT NOK\n");
-        return out;
-    }
-    temp[0] = '\0';
-
-    //get GID
-    readnbytes(connfd, 2, GID);
-    GID[2] = '\0';
-    printf("gid recebido: %s\n",GID);
-
-    if(!validGID(GID)){
-        sprintf(out, "RPT NOK\n");
-        return out;
-    }
-    
-    //get whitespace
-    readnbytes(connfd,1,temp);
-    if(temp[0] != ' '){
-        sprintf(out, "RPT NOK\n");
-        return out;
-    }
-    temp[0] = '\0';
-
-    //get textSize
-    while(temp[0] != ' '){
-        readnbytes(connfd, 1, temp);
-        //verification here
-        textSizeC[i] = temp[0];
-        i++;
-    }
-    textSizeC[i] = '\0';
-    textSize = atoi(textSizeC);
-    printf("textSize recebido: %d\n",textSize);
-
-    //get text
-    readnbytes(connfd, textSize, text);
-    text[textSize] = '\0';
-    printf("text recebido: %s\n",text);
-    
-    //get whitespace to see if it has a file or not
-    readnbytes(connfd, 1, temp);
-    if (temp[0] == ' '){
-        withFile=1;
-    }
-    temp[0] = '\0';
-
-    printf("tem file?- %d\n",withFile);
-
-    if(withFile){
-        //get FName
-        i=0;
-        while(temp[0] != ' '){
-            readnbytes(connfd, 1, temp);
-            //verification here
-            FName[i] = temp[0];
-            i++;
-        }
-        FName[i] = '\0';
-
-        //get whitespace
-        readnbytes(connfd,1,temp);
-        if(temp[0] != ' '){
-            sprintf(out, "RPT NOK\n");
-            return out;
-        }
-        temp[0] = '\0';
-
-        //get file size
-        i=0;
-        while(temp[0] != ' '){
-            readnbytes(connfd, 1, temp);
-            //verification here
-            if (i==0){
-                fileSize = temp[0];
-            }
-            else{
-                fileSize = fileSize*10 + temp[0];
-            }
-            i++;
-        }
-        
-        //get whitespace
-        readnbytes(connfd,1,temp);
-        if(temp[0] != ' '){
-            sprintf(out, "RPT NOK\n");
-            return out;
-        }
-        temp[0] = '\0';
-    }
-    DIR *d_GRP, *d_GID, *d_MSG, *d_MID;
-    struct dirent *dir_grp, *dir_gid, *dir_msg, *dir_mid;
-    int valid = 0, MID=0;
-    char UIDfname[20], MID_C[5],MIDpath[19],filePath[45],GIDpath[9],MSGpath[13];
-
-    d_GRP = opendir("GROUPS");
-    if (d_GRP){
-        printf("GROUPS opened\n");
-        while ((dir_grp = readdir(d_GRP)) != NULL){
-            //check if group exists
-            if (strcmp(dir_grp->d_name, GID) == 0){
-                printf("Group id is found\n");
-                //open group folder
-                sprintf(GIDpath, "GROUPS/%s",GID);
-                d_GID = opendir(GIDpath);
-                if (d_GID){
-                    printf("Group id is opened\n");
-                    //check if user is subscribed to group
-                    sprintf(UIDfname, "GROUPS/%s/%s.txt", GID, UID);
-                    if(access(UIDfname,F_OK)==0){
-                        printf("user is subscribed to group\n");
-                    }
-                    else{
-                        sprintf(out, "RPT NOK\n");
-                        return out;
-                    }
-                    printf("antes sprintf\n");
-                    //open MSG folder
-                    sprintf(MSGpath, "GROUPS/%s/MSG",GID);
-                    //printf("msg path: %s\n",MSGpath);
-                    d_MSG = opendir(MSGpath);
-                    if (d_MSG){
-
-                        printf("msg folder opened\n");
-
-                        //get next MID
-                        strcpy(MID_C,"0000\0");
-                        while ((dir_msg = readdir(d_MSG)) != NULL){
-                            strcpy(MID_C,dir_msg->d_name);
-                        }
-                        MID = atoi(MID_C)+1;
-
-                        printf("MID novo: %d\n",MID);
-
-                        if(getIntLength(MID) == 1){
-                            sprintf(MID_C, "000%d", MID);
-                        }
-                        else if(getIntLength(MID) == 2){
-                            sprintf(MID_C, "00%d", MID);
-                        }
-                        else if(getIntLength(MID) == 3){
-                            sprintf(MID_C, "0%d", MID);
-                        }
-                        else if(getIntLength(MID) == 4){
-                            sprintf(MID_C, "%d", MID);
-                        }
-
-                        printf("ready to create DIR\n");
-
-                        sprintf(MIDpath, "GROUPS/%s/MSG/%s", GID, MID_C);
-
-                        printf("mid path %s\n",MIDpath);
-
-                        //create MID folder
-                        if(!createDir(MIDpath))
-                            return "RPT NOK\n";
-
-                        printf("mid folder created\n");
-
-                        //open MID folder
-                        d_MID = opendir(MIDpath);
-                        if (d_MID){
-
-                            printf("mid folder opened\n");
-
-                            //create Author, Text (and File) files
-                            sprintf(filePath, "GROUPS/%s/MSG/%s/A U T H O R.txt",GID, MID_C);
-                            if (!createFile(filePath, UID))
-                                return "RPT NOK\n";
-                            filePath[0] = '\0';
-
-                            sprintf(filePath, "GROUPS/%s/MSG/%s/T E X T.txt",GID, MID_C);
-                            if (!createFile(filePath, text))
-                                return "RPT NOK\n";
-                            filePath[0] = '\0';
-
-                            if(withFile){
-                            //if there's a file attached to the message
-                            //read from tcp
-                            }
-                            closedir(d_MID);
-                        }
-                        closedir(d_MSG);
-                    }
-                    closedir(d_GID);
-                }
-            }
-            
-        }
-        closedir(d_GRP);
-        if (withFile){
-            printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
-        }
-        else{
-            printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
-        }
-        return "RPT OK\n";
-    }
-    return "RPT OK\n";
 }
