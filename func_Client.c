@@ -499,7 +499,6 @@ void postMessage(char *input){
     }
     if(withFile == 0){
         sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
-        printf("in a mandar: %s",in);
         connectTCP();
         writeTCP(in);
     }
@@ -522,7 +521,7 @@ void postMessage(char *input){
         writeTCP(in);
         nleft = sizeFile;
         while(nleft>0){
-            if(fread(buffer, 512, 1, fptr)){
+            fread(buffer, 512, 1, fptr);
             sendBuffer = &buffer[0];
             nwritten = writeTCP(sendBuffer);
             if(nwritten<0){
@@ -531,13 +530,18 @@ void postMessage(char *input){
             }
             nleft -= nwritten;
             sendBuffer += nwritten;
-            }
         }
         fclose(fptr);
     }
     status = readTCP(9);
 
-    if (strcmp(status, "RPT NOK\n") == 0){
+    if (strcmp(status, "RPT OK\n") == 0){
+        status[strlen(status)-1] = '\0';
+        printf("Posted message %s to group %s\n", &status[4], savedGID);
+        closeTCP();
+        return;
+    }
+    else if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
@@ -547,11 +551,9 @@ void postMessage(char *input){
         closeTCP();
         return;
     }
-    
-    status[strlen(status)-1] = '\0';
-    printf("Posted message %s to group %s\n", &status[4], savedGID);
+    /*printf("Error: error occurred while posting\n");
     closeTCP();
-    return;
+    return;*/
 }
 
 void retrieveMessages(char *input){
