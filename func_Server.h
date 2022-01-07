@@ -12,3 +12,4 @@ char *showAvailableGroupsS();
 char *subscribeGroupS(char *input);
 char *unsubscribeGroupS(char *input);
 char *showMyGroupsS(char *input);
+int getIntLength(int i);
