@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <ctype.h>
+#include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "func_Server.h"
@@ -189,6 +190,10 @@ int deleteDir(char *path){
         return 1;
     else
         return 0;
+}
+
+int getIntLength(int i){
+    return (floor(log10(abs(i))) + 1);
 }
 
 char* registerUserS(char *input){
