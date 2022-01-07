@@ -521,27 +521,22 @@ void postMessage(char *input){
         writeTCP(in);
         nleft = sizeFile;
         while(nleft>0){
-            fread(buffer, 512, 1, fptr);
-            sendBuffer = &buffer[0];
-            nwritten = writeTCP(sendBuffer);
-            if(nwritten<0){
-                printf("Error: error sending file\n");
-                closeTCP();
+            if(fread(buffer, 512, 1, fptr)){
+                sendBuffer = &buffer[0];
+                nwritten = writeTCP(sendBuffer);
+                if(nwritten<0){
+                    printf("Error: error sending file\n");
+                    closeTCP();
+                }
+                nleft -= nwritten;
+                sendBuffer += nwritten;
             }
-            nleft -= nwritten;
-            sendBuffer += nwritten;
         }
         fclose(fptr);
     }
     status = readTCP(9);
 
-    if (strcmp(status, "RPT OK\n") == 0){
-        status[strlen(status)-1] = '\0';
-        printf("Posted message %s to group %s\n", &status[4], savedGID);
-        closeTCP();
-        return;
-    }
-    else if (strcmp(status, "RPT NOK\n") == 0){
+    if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
@@ -551,9 +546,11 @@ void postMessage(char *input){
         closeTCP();
         return;
     }
-    /*printf("Error: error occurred while posting\n");
+    
+    status[strlen(status)-1] = '\0';
+    printf("Posted message %s to group %s\n", &status[4], savedGID);
     closeTCP();
-    return;*/
+    return;
 }
 
 void retrieveMessages(char *input){
@@ -623,7 +620,7 @@ void retrieveMessages(char *input){
         int size = atoi(TSize);
         out = readTCP(size);
         strcpy(text, out);
-        text[size] = '\0';
+        text[size] = '\0'; // remove \n
 
         printf("%s - \"%s\"", MID, text);
 
