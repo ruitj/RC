@@ -5,10 +5,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 char savedUID[MAX_UID_SIZE], savedPass[MAX_PASS_SIZE];
 char savedGID[MAX_GID_SIZE];
 int loggedin = 0, GIDSelected = 0;
+char buffer_tcp[MAX_OUTTCP_SIZE+1];
 
 int validUID(char *input){
     for (int i = 0; ((input[i] != ' ') && (input[i] != '\n'));i++){
@@ -50,6 +52,18 @@ int appendtoFile(char *filename, char *content){
     FILE *fp;
     if((fp = fopen(filename, "ab+")) != NULL){
         fputs(content, fp);
+        fclose(fp);
+        return 1;
+    }
+    return 0;
+}
+
+int createFile(char *filename){
+    FILE *fp;
+    if((fp = fopen(filename, "w")) != NULL){
+        fputs("", fp);
+        fclose(fp);
+        printf("success\n");
         return 1;
     }
     return 0;
@@ -87,7 +101,11 @@ void registerUser(char *input){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else{
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 }
@@ -127,7 +145,11 @@ void unregisterUser(char *input){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else{
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 }
@@ -159,19 +181,22 @@ void loginUser(char *input){
     
     if (strcmp(out, "RLO OK\n") == 0){
         printf("You are now logged in\n");
+        // save credentials (UID and Password)
+        sscanf(input, "%s %s", savedUID, savedPass);
+        loggedin = 1;
     }
     else if (strcmp(out, "RLO NOK\n") == 0){
         printf("Invalid credentials\n");
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
         return;
     }
-
-    // save credentials (UID and Password)
-    sscanf(input, "%s %s", savedUID, savedPass);
-    loggedin = 1;
+    else{
+        printf("Error: unexpected protocol message received\n");
+        return;
+    }
 
 }
 
@@ -188,22 +213,25 @@ void logoutUser(){
 
     if (strcmp(out, "ROU OK\n") == 0){
         printf("You are now logged out\n");
+        // forget credentials (UID and Password)
+        savedUID[0] = '\0';
+        savedPass[0] = '\0';
+        savedGID[0] = '\0';
+        GIDSelected = 0;
+        loggedin = 0;
     }
     else if (strcmp(out, "ROU NOK\n") == 0){
         printf("Invalid credentials\n");
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
         return;
     }
-
-    // forget credentials (UID and Password)
-    savedUID[0] = '\0';
-    savedPass[0] = '\0';
-    savedGID[0] = '\0';
-    GIDSelected = 0;
-    loggedin = 0;
+    else{
+        printf("Error: unexpected protocol message received\n");
+        return;
+    }
 
 }
 
@@ -218,7 +246,11 @@ void showAvailableGroups(){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else if (strncmp(out, "RGL ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 
@@ -274,7 +306,11 @@ void subscribeGroup(char *input){
     out = sendUDP(in);
 
     if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else if (strncmp(out, "RGS ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
         return;
     }
     
@@ -338,7 +374,11 @@ void unsubscribeGroup(char *input){
         printf("Invalid credentials\n");
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else{
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 
@@ -364,7 +404,11 @@ void showMyGroups(){
         return;
     }
     else if (strcmp(out, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else if (strncmp(out, "RGM ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 
@@ -410,7 +454,7 @@ void showGIDSelected(){
 }
 
 void listUsers_GID(){
-    char in[MAX_INPUT_SIZE], *out, *status;
+    char in[MAX_INPUT_SIZE];
 
     if (!GIDSelected){
         printf("No group selected\n");
@@ -419,23 +463,29 @@ void listUsers_GID(){
 
     sprintf(in, "ULS %s\n", savedGID);
     
-    status = sendTCP(in, 7);
+    connectTCP();
+    writeTCP(in);
+    int nread = readTCP(7, buffer_tcp);
 
-    if (strcmp(status, "RLU NOK") == 0){
+    if (strcmp(buffer_tcp, "RUL NOK") == 0){
         printf("Error: invalid group ID\n");
         return;
     }
-    else if (strcmp(status, "ERR") == 0){
+    else if (strcmp(buffer_tcp, "ERR") == 0){
         printf("Error: unexpected protocol message\n");
+        return;
+    }
+    else if (strncmp(buffer_tcp, "RUL ", 4) != 0){
+        printf("Error: invalid group ID\n");
         return;
     }
 
     char GName[MAX_GNAME_SIZE];
     int j;
-    out = readTCP(1);
-    for (j = 0; out[0] != ' '; j++){
-        GName[j] = out[0];
-        out = readTCP(1);
+    readTCP(1, buffer_tcp);
+    for (j = 0; buffer_tcp[0] != ' '; j++){
+        GName[j] = buffer_tcp[0];
+        readTCP(1, buffer_tcp);
     }
     GName[j] = '\0';
 
@@ -443,17 +493,16 @@ void listUsers_GID(){
     printf("User IDs: ");
 
     while (1){
-        out = readTCP(MAX_OUTTCP_SIZE-1);
-        printf("%s", out);
-        int size = strlen(out);
-        if (out[size-1] == '\n')
+        int nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
+        printf("%s", buffer_tcp);
+        if (buffer_tcp[nread-1] == '\n')
             break;
     }
     closeTCP();
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE], *sendBuffer;
+    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE], *sendBuffer;
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
     ssize_t nwritten, nleft;
     FILE *fptr;
@@ -521,7 +570,11 @@ void postMessage(char *input){
         writeTCP(in);
         nleft = sizeFile;
         while(nleft>0){
-            fread(buffer, 512, 1, fptr);
+            if (fread(buffer, 512, 1, fptr)==0){
+                printf("Error\n");
+                closeTCP();
+                return;
+            }
             sendBuffer = &buffer[0];
             nwritten = writeTCP(sendBuffer);
             if(nwritten<0){
@@ -533,31 +586,30 @@ void postMessage(char *input){
         }
         fclose(fptr);
     }
-    status = readTCP(9);
+    int nread = readTCP(9, buffer_tcp);
+    closeTCP();
 
-    if (strcmp(status, "RPT OK\n") == 0){
-        status[strlen(status)-1] = '\0';
-        printf("Posted message %s to group %s\n", &status[4], savedGID);
-        closeTCP();
-        return;
-    }
-    else if (strcmp(status, "RPT NOK\n") == 0){
+    if (strcmp(buffer_tcp, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+    else if (strcmp(buffer_tcp, "ERR\n") == 0){
+        printf("Error: unexpected protocol message sent\n");
         closeTCP();
         return;
     }
-    /*printf("Error: error occurred while posting\n");
-    closeTCP();
-    return;*/
+    else if (strncmp(buffer_tcp, "RPT ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
+    }
+
+    buffer_tcp[nread-1] = '\0';
+    printf("Posted message %s to group %s\n", &buffer_tcp[4], savedGID);
+    return;
 }
 
 void retrieveMessages(char *input){
-    char in[MAX_INPUT_SIZE], *out, *status;
+    char in[MAX_INPUT_SIZE];
 
     if (!GIDSelected){
         printf("No group selected\n");
@@ -579,95 +631,100 @@ void retrieveMessages(char *input){
     sscanf(input,"%s", MID);
     sprintf(in ,"RTV %s %s %s\n", savedUID, savedGID, MID);
 
-    status = sendTCP(in, 7);
+    connectTCP();
+    writeTCP(in);
+    readTCP(7, buffer_tcp);
 
-    if (strcmp(status, "RRT NOK") == 0){
-        printf("Error: invalid credentials\n");
+    if (strcmp(buffer_tcp, "RRT NOK") == 0){
+        printf("invalid credentials\n");
         return;
     }
-    else if (strcmp(status, "RRT EOF") == 0){
+    else if (strcmp(buffer_tcp, "RRT EOF") == 0){
         printf("No messages available\n");
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+    else if (strcmp(buffer_tcp, "ERR\n") == 0){
+        printf("Error: unexpected protocol message sent\n");
+        return;
+    }
+    else if (strncmp(buffer_tcp, "RRT ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
         return;
     }
 
-    out = readTCP(3); // reads number of messages retrieved
-    printf("%s message(s) retrieved:\n", out);
-    int n_msgs = atoi(out);
+    readTCP(3, buffer_tcp); // reads number of messages retrieved
+    printf("%s message(s) retrieved:\n", buffer_tcp);
+    int n_msgs = atoi(buffer_tcp);
     int n_read = 0; // msgs already read
     int j;
 
-    readTCP(1); // reads space
-    out = readTCP(1);
+    readTCP(1, buffer_tcp); // reads space
+    readTCP(1, buffer_tcp);
     while (n_read < n_msgs){
         char MID[MAX_MID_SIZE], TSize[4], text[MAX_TEXT_SIZE];
 
-        for (j = 0; isdigit(out[0]); j++){
-            MID[j] = out[0];
-            out = readTCP(1);
+        for (j = 0; isdigit(buffer_tcp[0]); j++){
+            MID[j] = buffer_tcp[0];
+            readTCP(1, buffer_tcp);
         }
         MID[j] = '\0';
 
-        readTCP(6); // reads UID
+        readTCP(6, buffer_tcp); // reads UID
 
-        out = readTCP(1);
-        for (j = 0; isdigit(out[0]); j++){
-            TSize[j] = out[0];
-            out = readTCP(1);
+        readTCP(1, buffer_tcp);
+        for (j = 0; isdigit(buffer_tcp[0]); j++){
+            TSize[j] = buffer_tcp[0];
+            readTCP(1, buffer_tcp);
         }
         TSize[j] = '\0';
 
         int size = atoi(TSize);
-        out = readTCP(size);
-        strcpy(text, out);
-        text[size] = '\0'; // remove \n
+        readTCP(size, buffer_tcp);
+        strcpy(text, buffer_tcp);
+        text[size] = '\0';
 
         printf("%s - \"%s\"", MID, text);
 
-        readTCP(1); // reads space
-        out = readTCP(1);
+        readTCP(1, buffer_tcp); // reads space
+        readTCP(1, buffer_tcp);
         
-        if (out[0] == '/'){
-            readTCP(1); // reads space
+        if (buffer_tcp[0] == '/'){
+            readTCP(1, buffer_tcp); // reads space
             char FName[MAX_FNAME_SIZE], FSize[11];
 
-            out = readTCP(1);
-            for (j = 0; out[0] != ' '; j++){
-                FName[j] = out[0];
-                out = readTCP(1);
+            readTCP(1, buffer_tcp);
+            for (j = 0; buffer_tcp[0] != ' '; j++){
+                FName[j] = buffer_tcp[0];
+                readTCP(1, buffer_tcp);
             }
             FName[j] = '\0';
 
-            out = readTCP(1);
-            for (j = 0; out[0] != ' '; j++){
-                FSize[j] = out[0];
-                out = readTCP(1);
+            readTCP(1, buffer_tcp);
+            for (j = 0; buffer_tcp[0] != ' '; j++){
+                FSize[j] = buffer_tcp[0];
+                readTCP(1, buffer_tcp);
             }
             FSize[j] = '\0';
 
             int size = atoi(FSize);
-            char *content;
-            while (size > MAX_OUTTCP_SIZE){
-                content = readTCP(MAX_OUTTCP_SIZE);
-                if (!appendtoFile(FName, content)){
+            unlink(FName);
+            while (size > 0){
+                int nread;
+                if (size > MAX_OUTTCP_SIZE)
+                    nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
+                else
+                    nread = readTCP(size, buffer_tcp);
+                if (!appendtoFile(FName, buffer_tcp)){
                     printf("Error: unable to store file\n");
                     exit(1);
                 }
-                size -= MAX_OUTTCP_SIZE;
+                size -= nread;
             }
-            content = readTCP(size);
-            if (!appendtoFile(FName, content)){
-                printf("Error: unable to store file\n");
-                exit(1);
-            }
-            readTCP(1);
 
+            readTCP(1, buffer_tcp);
             printf("; file stored: %s", FName);
 
-            out = readTCP(1);
+            readTCP(1, buffer_tcp);
 
         }
         printf("\n");
