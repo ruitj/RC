@@ -502,7 +502,7 @@ void listUsers_GID(){
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE], *sendBuffer;
+    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
     ssize_t nwritten, nleft;
     FILE *fptr;
@@ -549,7 +549,7 @@ void postMessage(char *input){
     if(withFile == 0){
         sprintf(in, "PST %s %s %lu %s\n", savedUID, savedGID, strlen(text), text);
         connectTCP();
-        writeTCP(in);
+        writeTCP(in,strlen(in));
     }
     else{
         strcpy(FName,&input_temp[spaceIndex+1]);
@@ -558,7 +558,6 @@ void postMessage(char *input){
         if (fptr == NULL){
             printf("Error: file cannot be opened\n");
             closeTCP();
-            fclose(fptr);
             return;
         }
         fseek(fptr,0,SEEK_END);
@@ -567,44 +566,36 @@ void postMessage(char *input){
         //falta enviar o ficheiro
         sprintf(in, "PST %s %s %lu %s %s %d ", savedUID, savedGID, strlen(text), text, FName, sizeFile);
         connectTCP();
-        writeTCP(in);
+        writeTCP(in,strlen(in));
         nleft = sizeFile;
-        while(nleft>0){
-            if (fread(buffer, 512, 1, fptr)==0){
-                printf("Error\n");
-                closeTCP();
-                return;
-            }
-            sendBuffer = &buffer[0];
-            nwritten = writeTCP(sendBuffer);
+        while(nleft>512){
+            fread(buffer, 512, 1, fptr);
+            nwritten = writeTCP(buffer,512);
             if(nwritten<0){
                 printf("Error: error sending file\n");
                 closeTCP();
             }
             nleft -= nwritten;
-            sendBuffer += nwritten;
         }
+        buffer[0] = '\0';
+        writeTCP(buffer,nleft);
         fclose(fptr);
     }
-    int nread = readTCP(9, buffer_tcp);
-    closeTCP();
-
-    if (strcmp(buffer_tcp, "RPT NOK\n") == 0){
+    status = readTCP(9);
+    
+    if (strcmp(status, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
-    else if (strcmp(buffer_tcp, "ERR\n") == 0){
-        printf("Error: unexpected protocol message sent\n");
+    else if (strcmp(status, "ERR\n") == 0){
+        printf("Error: unexpected protocol message\n");
         closeTCP();
         return;
     }
-    else if (strncmp(buffer_tcp, "RPT ", 4) != 0){
-        printf("Error: unexpected protocol message received\n");
-    }
-
-    buffer_tcp[nread-1] = '\0';
-    printf("Posted message %s to group %s\n", &buffer_tcp[4], savedGID);
+    status[strlen(status)-1] = '\0';
+    printf("Posted message %s to group %s\n", &status[4], savedGID);
+    closeTCP();
     return;
 }
 
