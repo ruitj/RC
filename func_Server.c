@@ -952,17 +952,19 @@ int validUser(char *user_file){
     }
     return 1;
 }
-char* listUsers_GIDS(char *input){
+void listUsers_GIDS(char *input,int connfd){
     char GID[3], group_dirname[10],G_Name_path[29];
-
-   
+    
+    char buff[506];
     DIR * dirp;
     struct dirent * entry;
     strncpy(GID,input,2); GID[2] = '\0';
     sprintf(group_dirname,"GROUPS/%s",GID); group_dirname[9]='\0';
     dirp = opendir(group_dirname);
-    if(dirp==NULL)
-        return "RUL NOK";
+    if(dirp==NULL){
+        if(write(connfd,"RUL NOK\n",strlen("RUL NOK\n"))<0){
+        }
+    }
     sprintf(G_Name_path,"GROUPS/%s/%s_name.txt",GID,GID);
     FILE *Gname_ptr;
 
@@ -972,11 +974,10 @@ char* listUsers_GIDS(char *input){
     if(fscanf(Gname_ptr, "%s", G_Name)==0){
         exit(0);
     }
-    sprintf(out,"RUL OK %s",G_Name);
-    out[strlen(G_Name)+7]=' ';
-    out[strlen(G_Name)+8]='\0';
+    sprintf(buff,"RUL OK %s",G_Name);
+    buff[strlen(G_Name)+7]=' ';
+    buff[strlen(G_Name)+8]='\0';
     int i=strlen(G_Name)+8;
-    
     while ((entry = readdir(dirp)) != NULL) {
         
         if(entry->d_name[0]=='.')
@@ -985,19 +986,33 @@ char* listUsers_GIDS(char *input){
             continue;
         else{
             char user_file[6];
-        sscanf(entry->d_name,"%[^.]txt",user_file);
-        user_file[5]='\0';
+            sscanf(entry->d_name,"%[^.]txt",user_file);
+            user_file[5]='\0';
         
-        if(validUser(user_file)){
-            strncpy(&out[i],user_file,6);
-            out[i+5]=' ';
-            out[i+6]='\0';
-            i+=6;
+            if(validUser(user_file)){
+                strncpy(&buff[i],user_file,6);
+                buff[i+5]=' ';
+                buff[i+6]='\0';
+                i+=6;
+            }
+            
+        if(i>20){
+            buff[i]='\n';
+            if(write(connfd,buff,(size_t) i)<0){
+                exit(0);
+            }
+            i=0;
+            memset(buff, 0, sizeof (buff));
         }
         }
-    }
-    out[i-1]='\n';
 
+    }
+    buff[i]='\n';
+    if(write(connfd,buff,strlen(buff))<0) {
+        exit(0);
+    }
+    
     closedir(dirp);
-    return out;
 }
+
+
