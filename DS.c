@@ -30,7 +30,7 @@ int main(){
     
     socklen_t len;
     struct sockaddr_in cliaddr, servaddr;
-    char *out;
+    char *out,input[5];
     void sig_chld(int);
  
     /* create listening TCP socket */
@@ -70,10 +70,12 @@ int main(){
             connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
             close(listenfd);
             bzero(buffer, sizeof(buffer));
-            printf("Message From TCP client: ");
-            processInputTCP(connfd);
-            puts(buffer);
-            write(connfd, (const char*)buffer, sizeof(buffer));
+            if(read(connfd,input,4)>0){
+                printf("Message From TCP client: ");
+                processInputTCP(connfd,input);
+            }
+            /*puts(buffer);
+            write(connfd, (const char*)buffer, sizeof(buffer));*/
             close(connfd);
         }
         // if udp socket is readable receive the message.

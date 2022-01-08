@@ -10,7 +10,7 @@
 char savedUID[MAX_UID_SIZE], savedPass[MAX_PASS_SIZE];
 char savedGID[MAX_GID_SIZE];
 int loggedin = 0, GIDSelected = 0;
-char buffer_tcp[MAX_OUTTCP_SIZE+1];
+char buffer[MAX_OUTTCP_SIZE+1];
 
 int validUID(char *input){
     for (int i = 0; ((input[i] != ' ') && (input[i] != '\n'));i++){
@@ -464,28 +464,28 @@ void listUsers_GID(){
     sprintf(in, "ULS %s\n", savedGID);
     
     connectTCP();
-    writeTCP(in);
-    int nread = readTCP(7, buffer_tcp);
+    writeTCP(in, strlen(in));
+    readTCP(7, buffer);
 
-    if (strcmp(buffer_tcp, "RUL NOK") == 0){
+    if (strcmp(buffer, "RUL NOK") == 0){
         printf("Error: invalid group ID\n");
         return;
     }
-    else if (strcmp(buffer_tcp, "ERR") == 0){
+    else if (strcmp(buffer, "ERR") == 0){
         printf("Error: unexpected protocol message\n");
         return;
     }
-    else if (strncmp(buffer_tcp, "RUL ", 4) != 0){
+    else if (strncmp(buffer, "RUL ", 4) != 0){
         printf("Error: invalid group ID\n");
         return;
     }
 
     char GName[MAX_GNAME_SIZE];
     int j;
-    readTCP(1, buffer_tcp);
-    for (j = 0; buffer_tcp[0] != ' '; j++){
-        GName[j] = buffer_tcp[0];
-        readTCP(1, buffer_tcp);
+    readTCP(1, buffer);
+    for (j = 0; buffer[0] != ' '; j++){
+        GName[j] = buffer[0];
+        readTCP(1, buffer);
     }
     GName[j] = '\0';
 
@@ -493,16 +493,16 @@ void listUsers_GID(){
     printf("User IDs: ");
 
     while (1){
-        int nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
-        printf("%s", buffer_tcp);
-        if (buffer_tcp[nread-1] == '\n')
+        int nread = readTCP(MAX_OUTTCP_SIZE, buffer);
+        printf("%s", buffer);
+        if (buffer[nread-1] == '\n')
             break;
     }
     closeTCP();
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], *status, text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer[512], input_temp[MAX_TEXT_SIZE];
+    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer_post[512], input_temp[MAX_TEXT_SIZE];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
     ssize_t nwritten, nleft;
     FILE *fptr;
@@ -569,32 +569,32 @@ void postMessage(char *input){
         writeTCP(in,strlen(in));
         nleft = sizeFile;
         while(nleft>512){
-            fread(buffer, 512, 1, fptr);
-            nwritten = writeTCP(buffer,512);
+            fread(buffer_post, 512, 1, fptr);
+            nwritten = writeTCP(buffer_post,512);
             if(nwritten<0){
                 printf("Error: error sending file\n");
                 closeTCP();
             }
             nleft -= nwritten;
         }
-        buffer[0] = '\0';
-        writeTCP(buffer,nleft);
+        buffer_post[0] = '\0';
+        writeTCP(buffer_post,nleft);
         fclose(fptr);
     }
-    status = readTCP(9);
+    readTCP(9,buffer);
     
-    if (strcmp(status, "RPT NOK\n") == 0){
+    if (strcmp(buffer, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
         closeTCP();
         return;
     }
-    else if (strcmp(status, "ERR\n") == 0){
+    else if (strcmp(buffer, "ERR\n") == 0){
         printf("Error: unexpected protocol message\n");
         closeTCP();
         return;
     }
-    status[strlen(status)-1] = '\0';
-    printf("Posted message %s to group %s\n", &status[4], savedGID);
+    buffer[strlen(buffer)-1] = '\0';
+    printf("Posted message %s to group %s\n", &buffer[4], savedGID);
     closeTCP();
     return;
 }
@@ -623,77 +623,77 @@ void retrieveMessages(char *input){
     sprintf(in ,"RTV %s %s %s\n", savedUID, savedGID, MID);
 
     connectTCP();
-    writeTCP(in);
-    readTCP(7, buffer_tcp);
+    writeTCP(in,strlen(in));
+    readTCP(7, buffer);
 
-    if (strcmp(buffer_tcp, "RRT NOK") == 0){
+    if (strcmp(buffer, "RRT NOK") == 0){
         printf("invalid credentials\n");
         return;
     }
-    else if (strcmp(buffer_tcp, "RRT EOF") == 0){
+    else if (strcmp(buffer, "RRT EOF") == 0){
         printf("No messages available\n");
         return;
     }
-    else if (strcmp(buffer_tcp, "ERR\n") == 0){
+    else if (strcmp(buffer, "ERR\n") == 0){
         printf("Error: unexpected protocol message sent\n");
         return;
     }
-    else if (strncmp(buffer_tcp, "RRT ", 4) != 0){
+    else if (strncmp(buffer, "RRT ", 4) != 0){
         printf("Error: unexpected protocol message received\n");
         return;
     }
 
-    readTCP(3, buffer_tcp); // reads number of messages retrieved
-    printf("%s message(s) retrieved:\n", buffer_tcp);
-    int n_msgs = atoi(buffer_tcp);
+    readTCP(3, buffer); // reads number of messages retrieved
+    printf("%s message(s) retrieved:\n", buffer);
+    int n_msgs = atoi(buffer);
     int n_read = 0; // msgs already read
     int j;
 
-    readTCP(1, buffer_tcp); // reads space
-    readTCP(1, buffer_tcp);
+    readTCP(1, buffer); // reads space
+    readTCP(1, buffer);
     while (n_read < n_msgs){
         char MID[MAX_MID_SIZE], TSize[4], text[MAX_TEXT_SIZE];
 
-        for (j = 0; isdigit(buffer_tcp[0]); j++){
-            MID[j] = buffer_tcp[0];
-            readTCP(1, buffer_tcp);
+        for (j = 0; isdigit(buffer[0]); j++){
+            MID[j] = buffer[0];
+            readTCP(1, buffer);
         }
         MID[j] = '\0';
 
-        readTCP(6, buffer_tcp); // reads UID
+        readTCP(6, buffer); // reads UID
 
-        readTCP(1, buffer_tcp);
-        for (j = 0; isdigit(buffer_tcp[0]); j++){
-            TSize[j] = buffer_tcp[0];
-            readTCP(1, buffer_tcp);
+        readTCP(1, buffer);
+        for (j = 0; isdigit(buffer[0]); j++){
+            TSize[j] = buffer[0];
+            readTCP(1, buffer);
         }
         TSize[j] = '\0';
 
         int size = atoi(TSize);
-        readTCP(size, buffer_tcp);
-        strcpy(text, buffer_tcp);
+        readTCP(size, buffer);
+        strcpy(text, buffer);
         text[size] = '\0';
 
         printf("%s - \"%s\"", MID, text);
 
-        readTCP(1, buffer_tcp); // reads space
-        readTCP(1, buffer_tcp);
+        readTCP(1, buffer); // reads space
+        readTCP(1, buffer);
         
-        if (buffer_tcp[0] == '/'){
-            readTCP(1, buffer_tcp); // reads space
+        if (buffer[0] == '/'){
+            readTCP(1, buffer); // reads space
             char FName[MAX_FNAME_SIZE], FSize[11];
 
-            readTCP(1, buffer_tcp);
-            for (j = 0; buffer_tcp[0] != ' '; j++){
-                FName[j] = buffer_tcp[0];
-                readTCP(1, buffer_tcp);
+            readTCP(1, buffer);
+            for (j = 0; buffer[0] != ' '; j++){
+                FName[j] = buffer[0];
+                readTCP(1, buffer);
             }
             FName[j] = '\0';
 
-            readTCP(1, buffer_tcp);
-            for (j = 0; buffer_tcp[0] != ' '; j++){
-                FSize[j] = buffer_tcp[0];
-                readTCP(1, buffer_tcp);
+            readTCP(1, buffer);
+            for (j = 0; buffer[0] != ' '; j++){
+                FSize[j] = buffer[0];
+                readTCP(1, buffer);
             }
             FSize[j] = '\0';
 
@@ -702,20 +702,20 @@ void retrieveMessages(char *input){
             while (size > 0){
                 int nread;
                 if (size > MAX_OUTTCP_SIZE)
-                    nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
+                    nread = readTCP(MAX_OUTTCP_SIZE, buffer);
                 else
-                    nread = readTCP(size, buffer_tcp);
-                if (!appendtoFile(FName, buffer_tcp)){
+                    nread = readTCP(size, buffer);
+                if (!appendtoFile(FName, buffer)){
                     printf("Error: unable to store file\n");
                     exit(1);
                 }
                 size -= nread;
             }
 
-            readTCP(1, buffer_tcp);
+            readTCP(1, buffer);
             printf("; file stored: %s", FName);
 
-            readTCP(1, buffer_tcp);
+            readTCP(1, buffer);
 
         }
         printf("\n");

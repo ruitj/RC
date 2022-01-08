@@ -51,11 +51,11 @@ int writeTCP(char *msg, int n_bytes){
     return n_tcp;
 }
 
-char *readTCP(int n_bytes){
+int readTCP(int n_bytes, char *buffer_tcp){
     n_tcp=read(fd_tcp, buffer_tcp, n_bytes);
     if(n_tcp==-1) exit(1);
     buffer_tcp[n_tcp] = '\0';
-    return buffer_tcp;
+    return n_tcp;
 }
 
 void closeTCP(){
