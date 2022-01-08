@@ -945,3 +945,59 @@ char *postMessageS(int connfd){
     }
     return "RPT OK\n";
 }
+int validUser(char *user_file){
+    for (int i=0;user_file[i]!='\0';i++){
+        if(!isdigit(user_file[i]))
+            return 0;
+    }
+    return 1;
+}
+char* listUsers_GIDS(char *input){
+    char GID[3], group_dirname[10],G_Name_path[29];
+
+   
+    DIR * dirp;
+    struct dirent * entry;
+    strncpy(GID,input,2); GID[2] = '\0';
+    sprintf(group_dirname,"GROUPS/%s",GID); group_dirname[9]='\0';
+    dirp = opendir(group_dirname);
+    if(dirp==NULL)
+        return "RUL NOK";
+    sprintf(G_Name_path,"GROUPS/%s/%s_name.txt",GID,GID);
+    FILE *Gname_ptr;
+
+    Gname_ptr = fopen(G_Name_path, "r");
+
+    char G_Name[25];
+    if(fscanf(Gname_ptr, "%s", G_Name)==0){
+        exit(0);
+    }
+    sprintf(out,"RUL OK %s",G_Name);
+    out[strlen(G_Name)+7]=' ';
+    out[strlen(G_Name)+8]='\0';
+    int i=strlen(G_Name)+8;
+    
+    while ((entry = readdir(dirp)) != NULL) {
+        
+        if(entry->d_name[0]=='.')
+                continue; 
+        if(strlen(entry->d_name)<5)
+            continue;
+        else{
+            char user_file[6];
+        sscanf(entry->d_name,"%[^.]txt",user_file);
+        user_file[5]='\0';
+        
+        if(validUser(user_file)){
+            strncpy(&out[i],user_file,6);
+            out[i+5]=' ';
+            out[i+6]='\0';
+            i+=6;
+        }
+        }
+    }
+    out[i-1]='\n';
+
+    closedir(dirp);
+    return out;
+}
