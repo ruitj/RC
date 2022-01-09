@@ -111,6 +111,16 @@ int readTCP(int connfd, int n_bytes, char *content){
     return nread;
 }
 
+int writeTCP(int connfd, int n_bytes, char *content){
+    ssize_t nwrite;
+
+    nwrite=write(connfd, content, n_bytes);
+    if(nwrite<1){
+        exit(1);
+    }
+    return nwrite;
+}
+
 int validUID(char *input){
     for (int i = 0; ((input[i] != ' ') && (input[i] != '\n') && (input[i] != '\0'));i++){
         if ((!isdigit(input[i])) || (i >= 5))
