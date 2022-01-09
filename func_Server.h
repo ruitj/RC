@@ -1,9 +1,9 @@
 #include "Server.h"
 
 char *processInput(char *input);
-char *processInputTCP(int connfd, char *command);
+void processInputTCP(int connfd, char *command);
 int readTCP(int connfd, int n_bytes, char *content);
-char *postMessageS(int connfd);
+void postMessageS(int connfd);
 char *registerUserS(char *input);
 char* unregisterUserS(char *input);
 char *loginUserS(char *input);
