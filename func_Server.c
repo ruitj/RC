@@ -82,12 +82,11 @@ char* processInput(char *input){
         return "ERR\n";
 }
 
-char *processInputTCP(int connfd, char *command){
-    char *out,/*command[5],*/input[5];
+void processInputTCP(int connfd, char *command){
+    char input[5];
 
     if(strcmp(command, "PST ")==0){
-        out = postMessageS(connfd);
-        return out;
+        postMessageS(connfd);
     }
     else if(strcmp(command, "RTV ")==0){
         printf("RTV identificado\n");
@@ -713,7 +712,7 @@ char *showMyGroupsS(char *input){
     return "RGM E_USR\n";
 }
 
-char *postMessageS(int connfd){
+void postMessageS(int connfd){
     char UID[6],GID[3],textSizeC[4],temp[MAX_TEXT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE];
     int i=0, textSize, withFile = 0, fileSize=0;
 
@@ -723,14 +722,16 @@ char *postMessageS(int connfd){
 
     if(!validUID(UID)){
         sprintf(out, "RPT NOK\n");
-        return out;
+        write(connfd,out,strlen(out));
+        return;
     }
 
     //get whitespace
     readTCP(connfd,1,temp);
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
-        return out;
+        write(connfd,out,strlen(out));
+        return;
     }
     temp[0] = '\0';
 
@@ -739,14 +740,16 @@ char *postMessageS(int connfd){
 
     if(!validGID(GID)){
         sprintf(out, "RPT NOK\n");
-        return out;
+        write(connfd,out,strlen(out));
+        return;
     }
     
     //get whitespace
     readTCP(connfd,1,temp);
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
-        return out;
+        write(connfd,out,strlen(out));
+        return;
     }
     temp[0] = '\0';
 
@@ -816,8 +819,11 @@ char *postMessageS(int connfd){
                     //check if user is subscribed to group
                     sprintf(UIDfname, "GROUPS/%s/%s.txt", GID, UID);
                     if(access(UIDfname,F_OK)){
+                        closedir(d_GID);
+                        closedir(d_GRP);
                         sprintf(out, "RPT NOK\n");
-                        return out;
+                        write(connfd,out,strlen(out));
+                        return;
                     }
                     //open MSG folder
                     sprintf(MSGpath, "GROUPS/%s/MSG",GID);
@@ -834,7 +840,9 @@ char *postMessageS(int connfd){
                             closedir(d_MSG);
                             closedir(d_GID);
                             closedir(d_GRP);
-                            return "RPT NOK\n"; 
+                            sprintf(out, "RPT NOK\n");
+                            write(connfd,out,strlen(out));
+                            return;
                         }
                         MID = max+1;
 
@@ -858,7 +866,9 @@ char *postMessageS(int connfd){
                             closedir(d_MSG);
                             closedir(d_GID);
                             closedir(d_GRP);
-                            return "RPT NOK\n";
+                            sprintf(out, "RPT NOK\n");
+                            write(connfd,out,strlen(out));
+                            return;
                         }
 
                         //open MID folder
@@ -866,13 +876,23 @@ char *postMessageS(int connfd){
                         if (d_MID){
                             //create Author, Text (and File) files
                             sprintf(filePath, "GROUPS/%s/MSG/%s/A U T H O R.txt",GID, MID_C);
-                            if (!createFile(filePath, UID))
-                                return "RPT NOK\n";
+                            if (!createFile(filePath, UID)){
+                                sprintf(out, "RPT NOK\n");
+                                write(connfd,out,strlen(out));
+                                return;
+                            }
                             filePath[0] = '\0';
 
                             sprintf(filePath, "GROUPS/%s/MSG/%s/T E X T.txt",GID, MID_C);
-                            if (!createFile(filePath, text))
-                                return "RPT NOK\n";
+                            if (!createFile(filePath, text)){
+                                closedir(d_MID);
+                                closedir(d_MSG);
+                                closedir(d_GID);
+                                closedir(d_GRP);
+                                sprintf(out, "RPT NOK\n");
+                                write(connfd,out,strlen(out));
+                                return;
+                            }
                             filePath[0] = '\0';
 
                             if(withFile){
@@ -885,8 +905,15 @@ char *postMessageS(int connfd){
                                 sprintf(rcvFilePath,"GROUPS/%s/MSG/%s/%s",GID,MID_C,FName);
 
                                 fileptr = fopen(rcvFilePath, "wb");
-                                if (fileptr == NULL)
-                                    return 0;
+                                if (fileptr == NULL){
+                                    closedir(d_MID);
+                                    closedir(d_MSG);
+                                    closedir(d_GID);
+                                    closedir(d_GRP);
+                                    sprintf(out, "RPT NOK\n");
+                                    write(connfd,out,strlen(out));
+                                    return;
+                                }
 
                                 buffer[0] = '\0';
 
@@ -898,7 +925,9 @@ char *postMessageS(int connfd){
                                         closedir(d_MSG);
                                         closedir(d_GID);
                                         closedir(d_GRP);
-                                        return "RPT NOK\n";
+                                        sprintf(out, "RPT NOK\n");
+                                        write(connfd,out,strlen(out));
+                                        return;
                                     }
                                     else if(nread==0)
                                         break;
@@ -913,7 +942,9 @@ char *postMessageS(int connfd){
                                         closedir(d_MSG);
                                         closedir(d_GID);
                                         closedir(d_GRP);
-                                        return "RPT NOK\n";
+                                        sprintf(out, "RPT NOK\n");
+                                        write(connfd,out,strlen(out));
+                                        return;
                                     }
                                 fwrite(buffer, nread, 1, fileptr);
                                 fclose(fileptr);
@@ -934,9 +965,12 @@ char *postMessageS(int connfd){
             printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
         }
         sprintf(out, "RPT %s\n",MID_C);
-        return out;
+        write(connfd,out,strlen(out));
+        return;
     }
-    return "RPT NOK\n";
+    sprintf(out, "RPT NOK\n");
+    write(connfd,out,strlen(out));
+    return;
 }
 
 int validUser(char *user_file){
