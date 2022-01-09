@@ -11,9 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "func_Server.h"
-#include "func_Server.h"
 #define PORT_DEFAULT 58033
-#define MAXLINE 1024
 
 int max(int x, int y){
     if (x > y)
@@ -63,32 +61,27 @@ int main(){
         // select the ready descriptor
         nready = select(maxfdp1, &rset, NULL, NULL, NULL);
         if(nready){
-        // if tcp socket is readable then handle
-        // it by accepting the connection
-        if (FD_ISSET(listenfd, &rset)) {
-            len = sizeof(cliaddr);
-            connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
-            close(listenfd);
-            bzero(buffer, sizeof(buffer));
-            if(read(connfd,input,4)>0){
-                printf("Message From TCP client: ");
-                processInputTCP(connfd,input);
+            // if tcp socket is readable then handle
+            // it by accepting the connection
+            if (FD_ISSET(listenfd, &rset)) {
+                len = sizeof(cliaddr);
+                connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
+                bzero(buffer, sizeof(buffer));
+                if(read(connfd,input,4)>0){
+                    printf("Message From TCP client: ");
+                    processInputTCP(connfd,input);
+                }
+                close(connfd);
             }
-            /*puts(buffer);
-            write(connfd, (const char*)buffer, sizeof(buffer));*/
-            close(connfd);
-        }
-        // if udp socket is readable receive the message.
-        if (FD_ISSET(udpfd, &rset)) {
-            len = sizeof(cliaddr);
-            bzero(buffer, sizeof(buffer));
-            if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
-            out = processInput(buffer);
-            sendto(udpfd, (const char*)out, strlen(out), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
+            // if udp socket is readable receive the message.
+            if (FD_ISSET(udpfd, &rset)) {
+                len = sizeof(cliaddr);
+                bzero(buffer, sizeof(buffer));
+                if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
+                    out = processInput(buffer);
+                    sendto(udpfd, (const char*)out, strlen(out), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
+                }
             }
-            else
-                continue;
-        }
         }
     }
     return 0;
