@@ -13,7 +13,6 @@
 int fd_tcp, errcode_tcp;
 ssize_t n_tcp;
 struct addrinfo hints_tcp, *res_tcp;
-char buffer_tcp[MAX_OUTTCP_SIZE+1];
 
 void initTCP(char hostName[], char port[]){
     fd_tcp=socket(AF_INET, SOCK_STREAM, 0);
