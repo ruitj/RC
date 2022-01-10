@@ -27,22 +27,9 @@ void initTCP(char hostName[], char port[]){
 
 }
 
-char *sendTCP(char *msg, int n_bytes){
+void connectTCP(){
     n_tcp=connect(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen);
     if(n_tcp==-1) exit(1);
-
-    n_tcp=write(fd_tcp, msg, strlen(msg));
-    if(n_tcp==-1) exit(1);
-
-    n_tcp=read(fd_tcp, buffer_tcp, n_bytes);
-    if(n_tcp==-1) exit(1);
-    
-    buffer_tcp[n_tcp] = '\0';
-    return buffer_tcp;
-}
-
-void connectTCP(){
-    connect(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen);
 }
 
 int writeTCP(char *msg, int n_bytes){
@@ -51,10 +38,10 @@ int writeTCP(char *msg, int n_bytes){
     return n_tcp;
 }
 
-int readTCP(int n_bytes, char *buffer_tcp){
-    n_tcp=read(fd_tcp, buffer_tcp, n_bytes);
+int readTCP(int n_bytes, char *content){
+    n_tcp=read(fd_tcp, content, n_bytes);
     if(n_tcp==-1) exit(1);
-    buffer_tcp[n_tcp] = '\0';
+    content[n_tcp] = '\0';
     return n_tcp;
 }
 

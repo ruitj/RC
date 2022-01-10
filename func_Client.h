@@ -19,4 +19,3 @@ void postMessage(char *input);
 void retrieveMessages(char *input);
 void initSession(char *hostName, char *port);
 void exitSession();
-/* headers das funcoes/operacoes do user */

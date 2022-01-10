@@ -12,6 +12,10 @@
 #include <string.h>
 #include "func_Server.h"
 #define PORT_DEFAULT 58033
+#define MAXLINE 1024
+
+char port[10];
+int verbose_mode = 0;
 
 int max(int x, int y){
     if (x > y)
@@ -20,8 +24,7 @@ int max(int x, int y){
         return y;
 }
 
-int main(){
-
+int receivecmd(){
     int listenfd, connfd, udpfd,nready, maxfdp1;
     char buffer[MAX_OUT_SIZE];
     fd_set rset;
@@ -29,7 +32,6 @@ int main(){
     socklen_t len;
     struct sockaddr_in cliaddr, servaddr;
     char *out,input[5];
-    void sig_chld(int);
  
     /* create listening TCP socket */
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -68,7 +70,8 @@ int main(){
                 connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
                 bzero(buffer, sizeof(buffer));
                 if(read(connfd,input,4)>0){
-                    printf("Message From TCP client: ");
+                    /*if (verbose_mode)
+                        printf("Message received from:\nIP: %s\nPort: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));*/
                     processInputTCP(connfd,input);
                 }
                 close(connfd);
@@ -84,5 +87,48 @@ int main(){
             }
         }
     }
+}
+
+/*int parseArgs(int n, char **args){
+    if (n > 1){
+        if (n >= 3){
+            if (strcmp(args[1], "-p") == 0){
+                sprintf(port, "%s", args[2]);
+                if (n == 4){
+                    if (strcmp(args[3], "-v") == 0)
+                        verbose_mode = 1;
+                }
+                else if (n != 3){
+                    return 0;
+                }
+            }
+            else if (strcmp(args[1], "-v") == 0){
+                verbose_mode = 1;
+            }
+            else{
+                return 0;
+            }
+        }
+        else if (strcmp(args[1], "-v") == 0){
+            sprintf(port, "%s", PORT_DEFAULT);
+            verbose_mode = 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    return 1;
+}*/
+
+int main(int argc, char **argv){
+
+    //input parsing
+    //int p = parseArgs(argc, argv);
+    //if (p){
+        receivecmd();   
+    //}
+    //else{
+     //   printf("Error: invalid input arguments\n");
+    //}
     return 0;
 }
