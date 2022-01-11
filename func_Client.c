@@ -481,7 +481,7 @@ void listUsers_GID(){
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer_post[512], input_temp[MAX_TEXT_SIZE];
+    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer_post[512];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
     ssize_t nwritten, nleft;
     FILE *fptr;
@@ -494,21 +494,21 @@ void postMessage(char *input){
         printf("Error: No group selected\n");
         return;
     }
+
     int i = 1;
-    strcpy(input_temp,input);
-    if(input_temp[0] != '"'){
+    if(input[0] != '"'){
         printf("Error: Wrong post format\n");
         return;
     }
-    while(input_temp[i] != '\n'){
-        if(input_temp[i] == '"'){
-            if(input_temp[i+1] == ' '){
+    while(input[i] != '\n'){
+        if(input[i] == '"'){
+            if(input[i+1] == ' '){
                 duasAspas = 1;
                 spaceIndex = i+1;
                 withFile = 1;
                 break;
             }
-            else if(input_temp[i+1] == '\n'){
+            else if(input[i+1] == '\n'){
                 duasAspas = 1;
                 break;
             }
@@ -517,7 +517,11 @@ void postMessage(char *input){
                 return;
             }
         }
-        text[i-1] = input_temp[i];
+        text[i-1] = input[i];
+        if (i > 241){
+            printf("Error: text too long\n");
+            return;
+        }
         i++;
     }
     text[i-1] = '\0';
@@ -531,7 +535,7 @@ void postMessage(char *input){
         writeTCP(in,strlen(in));
     }
     else{
-        strcpy(FName,&input_temp[spaceIndex+1]);
+        strcpy(FName,&input[spaceIndex+1]);
         FName[strlen(FName)-1] = '\0';
         fptr = fopen(FName,"rb");
         if (fptr == NULL){

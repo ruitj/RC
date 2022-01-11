@@ -154,6 +154,15 @@ int parseArgs(int n, char **args){
             else if(strcmp(args[1],"-p") == 0){
                 strcpy(port, args[2]);
                 gethostname(hostName, sizeof(hostName));
+                if (n == 5){
+                    if(strcmp(args[3],"-n") == 0){
+                        strcpy(hostName, args[4]);
+                    }
+                }
+                else if (n != 3){
+                    fprintf(stderr,"Error: invalid arguments\n");
+                    exit(1);
+                }
                 return 1;
             }
             else{

@@ -20,65 +20,62 @@ char* processInput(char *input){
         if (input[3] == ' ')
             out = registerUserS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "UNR") == 0){
         if (input[3] == ' ')
             out = unregisterUserS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "LOG") == 0){
         if (input[3] == ' ')
             out = loginUserS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "OUT") == 0){
         if (input[3] == ' ')
             out = logoutUserS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "GLS") == 0){
         if (input[3] == '\n')
             out = showAvailableGroupsS();
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "GSR") == 0){
         if (input[3] == ' ')
             out = subscribeGroupS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "GUR") == 0){
         if (input[3] == ' ')
             out = unsubscribeGroupS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else if (strcmp(command, "GLM") == 0){
         if (input[3] == ' ')
             out = showMyGroupsS(&input[4]);
         else{
-            sprintf(out, "ERR\n");
+            return "ERR\n";
         }
     }
     else{
-        sprintf(out, "ERR\n");
-    }
-    if(out!=NULL)
-        return out;
-    else
         return "ERR\n";
+    }
+    return out;
 }
 
 void processInputTCP(int connfd, char *command){
@@ -105,6 +102,7 @@ void processInputTCP(int connfd, char *command){
     }
     else{
         printf("Error: wrong message format\n");
+        writeTCP(connfd, 5, "ERR\n");
     }
 }
 
@@ -183,7 +181,7 @@ int createFile(char *path, char *content){
     FILE *fPtr = fopen(path, "w");
     if (fPtr == NULL)
         return 0;
-    fputs(content, fPtr);
+    fwrite(content, 1, strlen(content), fPtr);
     fclose(fPtr);
     return 1;
 }
@@ -325,7 +323,7 @@ char* loginUserS(char *input){
     if(access(user_dirname, F_OK ) == 0 ){
         password_ptr=fopen(pass_dir,"r");
         if(fgets(file_password,9,password_ptr)==NULL){
-            sprintf(out,"ERR\n");
+            sprintf(out,"RLO NOK\n");
         }
         fclose(password_ptr);
         file_password[8]='\0';
@@ -335,7 +333,7 @@ char* loginUserS(char *input){
             sprintf(user_dirname,"USERS/%s/%s_login.txt",UID,UID);
             FILE *login_ptr = fopen(user_dirname,"w");
             if(login_ptr==NULL){
-                sprintf(out,"ERR\n");
+                sprintf(out,"RLO NOK\n");
             }
             else{
                 printf("UID=%s: login ok\n", UID);
@@ -538,17 +536,19 @@ char *subscribeGroupS(char *input){
         }
         else{
             int nextGID = 1;
-            short int max = 1;
+            short int max = 0;
             while ((dir_grp = readdir(d_GRP)) != NULL){
+                if(dir_grp->d_name[0]=='.')
+                    continue;
                 nextGID = atoi(dir_grp->d_name);
                 if (nextGID > max)
                     max = nextGID;
             }
             closedir(d_GRP);
+            max++;
             
             if (max == 99)
                 return "RGS E_FULL\n";
-            max++;
             char newGID[8];
             if (max < 10)
                 sprintf(newGID, "0%d", max);
@@ -779,7 +779,7 @@ void listUsers_GIDS(char *input,int connfd){
     while ((entry = readdir(dirp)) != NULL) {
         
         if(entry->d_name[0]=='.')
-                continue; 
+            continue; 
         if(strlen(entry->d_name)<5)
             continue;
         else{
@@ -819,7 +819,7 @@ void postMessageS(int connfd){
 
     if(!validUID(UID)){
         sprintf(out, "RPT NOK\n");
-        write(connfd,out,strlen(out));
+        writeTCP(connfd,strlen(out), out);
         return;
     }
 
@@ -827,7 +827,7 @@ void postMessageS(int connfd){
     readTCP(connfd,1,temp);
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
-        write(connfd,out,strlen(out));
+        writeTCP(connfd,strlen(out), out);
         return;
     }
     temp[0] = '\0';
@@ -837,7 +837,7 @@ void postMessageS(int connfd){
 
     if(!validGID(GID)){
         sprintf(out, "RPT NOK\n");
-        write(connfd,out,strlen(out));
+        writeTCP(connfd,strlen(out), out);
         return;
     }
     
@@ -845,13 +845,16 @@ void postMessageS(int connfd){
     readTCP(connfd,1,temp);
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
-        write(connfd,out,strlen(out));
+        writeTCP(connfd,strlen(out), out);
         return;
     }
     temp[0] = '\0';
 
     //get textSize
     while(temp[0] != ' '){
+        if (i > 2){
+            break;
+        }
         readTCP(connfd, 1, temp);
         //verification here
         textSizeC[i] = temp[0];
@@ -899,6 +902,7 @@ void postMessageS(int connfd){
             i++;
         }
     }
+
     DIR *d_GRP, *d_GID, *d_MSG, *d_MID;
     struct dirent *dir_grp;
     int MID=0, max=0;
@@ -919,7 +923,7 @@ void postMessageS(int connfd){
                         closedir(d_GID);
                         closedir(d_GRP);
                         sprintf(out, "RPT NOK\n");
-                        write(connfd,out,strlen(out));
+                        writeTCP(connfd, strlen(out), out);
                         return;
                     }
                     //open MSG folder
@@ -938,7 +942,7 @@ void postMessageS(int connfd){
                             closedir(d_GID);
                             closedir(d_GRP);
                             sprintf(out, "RPT NOK\n");
-                            write(connfd,out,strlen(out));
+                            writeTCP(connfd,strlen(out), out);
                             return;
                         }
                         MID = max+1;
@@ -964,7 +968,7 @@ void postMessageS(int connfd){
                             closedir(d_GID);
                             closedir(d_GRP);
                             sprintf(out, "RPT NOK\n");
-                            write(connfd,out,strlen(out));
+                            writeTCP(connfd,strlen(out), out);
                             return;
                         }
 
@@ -975,7 +979,7 @@ void postMessageS(int connfd){
                             sprintf(filePath, "GROUPS/%s/MSG/%s/A U T H O R.txt",GID, MID_C);
                             if (!createFile(filePath, UID)){
                                 sprintf(out, "RPT NOK\n");
-                                write(connfd,out,strlen(out));
+                                writeTCP(connfd,strlen(out), out);
                                 return;
                             }
                             filePath[0] = '\0';
@@ -987,7 +991,7 @@ void postMessageS(int connfd){
                                 closedir(d_GID);
                                 closedir(d_GRP);
                                 sprintf(out, "RPT NOK\n");
-                                write(connfd,out,strlen(out));
+                                writeTCP(connfd,strlen(out), out);
                                 return;
                             }
                             filePath[0] = '\0';
@@ -1008,7 +1012,7 @@ void postMessageS(int connfd){
                                     closedir(d_GID);
                                     closedir(d_GRP);
                                     sprintf(out, "RPT NOK\n");
-                                    write(connfd,out,strlen(out));
+                                    writeTCP(connfd,strlen(out), out);
                                     return;
                                 }
 
@@ -1024,13 +1028,14 @@ void postMessageS(int connfd){
                                             closedir(d_GID);
                                             closedir(d_GRP);
                                             sprintf(out, "RPT NOK\n");
-                                            write(connfd,out,strlen(out));
+                                            writeTCP(connfd,strlen(out), out);
                                             return;
                                         }
                                         else if(nread==0)
                                             break;
 
-                                        fwrite(buffer, nread, 1, fileptr);
+                                        if (!fwrite(buffer, 1, nread, fileptr))
+                                            return;
                                         nleft -= nread;
                                     }
                                     else{
@@ -1042,14 +1047,14 @@ void postMessageS(int connfd){
                                             closedir(d_GID);
                                             closedir(d_GRP);
                                             sprintf(out, "RPT NOK\n");
-                                            write(connfd,out,strlen(out));
+                                            writeTCP(connfd,strlen(out), out);
                                             return;
                                         }
+                                        if (!fwrite(buffer, 1, nread, fileptr))
+                                            return;
                                         nleft -= nread;
                                     }
                                 }
-                                
-                                fwrite(buffer, nread, 1, fileptr);
                                 fclose(fileptr);
                             }
                             closedir(d_MID);
@@ -1163,6 +1168,9 @@ void retrieveMessagesS(char *input, int connfd){
                 writeTCP(connfd, 9, "RRT NOK\n");
                 return;
             }
+            if (n_groups == 20){
+                break;
+            }
             i++;
         }
         closedir(d_MID);
@@ -1215,7 +1223,7 @@ void retrieveMessagesS(char *input, int connfd){
                     int filesize = ftell(fp);
                     fseek(fp,0,SEEK_SET);
                     char text[MAX_TEXT_SIZE];
-                    if (!fread(text, filesize, 1, fp))
+                    if (!fread(text, 1, filesize, fp))
                         return;
                     text[filesize] = '\0';
                     fclose(fp);
@@ -1238,7 +1246,7 @@ void retrieveMessagesS(char *input, int connfd){
                             if (strcmp(dir_msg->d_name, "T E X T.txt") != 0){
                                 char MFILEpath[300];
                                 sprintf(MFILEpath, "GROUPS/%s/MSG/%s/%s", GID, MID_tmp, dir_msg->d_name);
-                                FILE *fptr = fopen(MFILEpath, "r");
+                                FILE *fptr = fopen(MFILEpath, "rb");
                                 if (fptr){
                                     fseek(fptr, 0, SEEK_END);
                                     int filesize = ftell(fptr);
@@ -1248,13 +1256,13 @@ void retrieveMessagesS(char *input, int connfd){
                                     while (filesize > 0){
                                         int nwritten;
                                         if (filesize > 512){
-                                            if (!fread(out, 512, 1, fptr))
+                                            if (!fread(out, 1, 512, fptr))
                                                 return;
                                             out[512] = '\0';
                                             nwritten = writeTCP(connfd, 512, out);
                                         }
                                         else{
-                                            if (!fread(out, filesize, 1, fptr))
+                                            if (!fread(out, 1, filesize, fptr))
                                                 return;
                                             out[filesize] = '\0';
                                             nwritten = writeTCP(connfd, filesize, out);
