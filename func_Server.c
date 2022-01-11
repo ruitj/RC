@@ -900,9 +900,9 @@ void postMessageS(int connfd){
         }
     }
     DIR *d_GRP, *d_GID, *d_MSG, *d_MID;
-    struct dirent *dir_grp, *dir_gid, *dir_msg, *dir_mid;
+    struct dirent *dir_grp;
     int MID=0, max=0;
-    char UIDfname[20], MID_C[5],MIDpath[19],filePath[45],GIDpath[9],MSGpath[13],rcvFilePath[45];
+    char UIDfname[20], MID_C[14],MIDpath[28],filePath[45],GIDpath[10],MSGpath[14],rcvFilePath[53];
 
     d_GRP = opendir("GROUPS");
     if (d_GRP){
