@@ -48,26 +48,6 @@ int validGName(char *input){
     return 1;
 }
 
-int appendtoFile(char *filename, char *content){
-    FILE *fp;
-    if((fp = fopen(filename, "ab+")) != NULL){
-        fputs(content, fp);
-        fclose(fp);
-        return 1;
-    }
-    return 0;
-}
-
-int createFile(char *filename){
-    FILE *fp;
-    if((fp = fopen(filename, "w")) != NULL){
-        fputs("", fp);
-        fclose(fp);
-        return 1;
-    }
-    return 0;
-}
-
 void registerUser(char *input){
     char in[MAX_INPUT_SIZE], *out;
 
@@ -464,7 +444,7 @@ void listUsers_GID(){
     
     connectTCP();
     writeTCP(in, strlen(in));
-    int nread = readTCP(7, buffer_tcp);
+    readTCP(7, buffer_tcp);
 
     if (strcmp(buffer_tcp, "RUL NOK") == 0){
         printf("Error: invalid group ID\n");
@@ -567,23 +547,18 @@ void postMessage(char *input){
         connectTCP();
         writeTCP(in,strlen(in));
         nleft = sizeFile;
-        while(nleft>0){
-            if (nleft > 512){
-                fread(buffer_post, 512, 1, fptr);
-                nwritten = writeTCP(buffer_post,512);
-                if(nwritten<0){
-                    printf("Error: error sending file\n");
-                    closeTCP();
-                }
-                nleft -= nwritten;
+        while(nleft>512){
+            if (!fread(buffer_post, 512, 1, fptr))
+                return;
+            nwritten = writeTCP(buffer_post,512);
+            if(nwritten<0){
+                printf("Error: error sending file\n");
+                closeTCP();
             }
-            else{
-                buffer_post[0] = '\0';
-                nwritten = writeTCP(buffer_post,nleft);
-                nleft -= nwritten;
-            }
+            nleft -= nwritten;
         }
-        
+        buffer_post[0] = '\0';
+        writeTCP(buffer_post,nleft);
         fclose(fptr);
     }
     readTCP(9,buffer_tcp);
@@ -594,10 +569,16 @@ void postMessage(char *input){
         return;
     }
     else if (strcmp(buffer_tcp, "ERR\n") == 0){
-        printf("Error: unexpected protocol message\n");
+        printf("Error: unexpected protocol message sent\n");
         closeTCP();
         return;
     }
+    else if (strncmp(buffer_tcp, "RPT ", 4) != 0){
+        printf("Error: unexpected protocol message received\n");
+        closeTCP();
+        return;
+    }
+
     buffer_tcp[strlen(buffer_tcp)-1] = '\0';
     printf("Posted message %s to group %s\n", &buffer_tcp[4], savedGID);
     closeTCP();
@@ -710,19 +691,20 @@ void retrieveMessages(char *input){
             FSize[j] = '\0';
 
             int size = atoi(FSize);
-            unlink(FName);
+            FILE *fp = fopen(FName, "wb");
             while (size > 0){
                 int nread;
                 if (size > MAX_OUTTCP_SIZE)
                     nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
                 else
                     nread = readTCP(size, buffer_tcp);
-                if (!appendtoFile(FName, buffer_tcp)){
+                if (!fwrite(buffer_tcp, 1, nread, fp)){
                     printf("Error: unable to store file\n");
                     exit(1);
                 }
                 size -= nread;
             }
+            fclose(fp);
 
             readTCP(1, buffer_tcp);
             printf("; file stored: %s", FName);
