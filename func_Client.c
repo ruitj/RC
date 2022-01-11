@@ -567,17 +567,23 @@ void postMessage(char *input){
         connectTCP();
         writeTCP(in,strlen(in));
         nleft = sizeFile;
-        while(nleft>512){
-            fread(buffer_post, 512, 1, fptr);
-            nwritten = writeTCP(buffer_post,512);
-            if(nwritten<0){
-                printf("Error: error sending file\n");
-                closeTCP();
+        while(nleft>0){
+            if (nleft > 512){
+                fread(buffer_post, 512, 1, fptr);
+                nwritten = writeTCP(buffer_post,512);
+                if(nwritten<0){
+                    printf("Error: error sending file\n");
+                    closeTCP();
+                }
+                nleft -= nwritten;
             }
-            nleft -= nwritten;
+            else{
+                buffer_post[0] = '\0';
+                nwritten = writeTCP(buffer_post,nleft);
+                nleft -= nwritten;
+            }
         }
-        buffer_post[0] = '\0';
-        writeTCP(buffer_post,nleft);
+        
         fclose(fptr);
     }
     readTCP(9,buffer_tcp);

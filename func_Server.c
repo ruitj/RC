@@ -1001,7 +1001,7 @@ void postMessageS(int connfd){
 
                                 sprintf(rcvFilePath,"GROUPS/%s/MSG/%s/%s",GID,MID_C,FName);
 
-                                fileptr = fopen(rcvFilePath, "wb");
+                                fileptr = fopen(rcvFilePath, "a+b");
                                 if (fileptr == NULL){
                                     closedir(d_MID);
                                     closedir(d_MSG);
@@ -1015,34 +1015,40 @@ void postMessageS(int connfd){
                                 buffer[0] = '\0';
 
                                 nleft = nbytes;
-                                while(nleft>512){
-                                    nread = readTCP(connfd, 512, buffer);
-                                    if(nread==-1){
-                                        closedir(d_MID);
-                                        closedir(d_MSG);
-                                        closedir(d_GID);
-                                        closedir(d_GRP);
-                                        sprintf(out, "RPT NOK\n");
-                                        write(connfd,out,strlen(out));
-                                        return;
-                                    }
-                                    else if(nread==0)
-                                        break;
+                                while(nleft>0){
+                                    if (nleft > 512){
+                                        nread = readTCP(connfd, 512, buffer);
+                                        if(nread==-1){
+                                            closedir(d_MID);
+                                            closedir(d_MSG);
+                                            closedir(d_GID);
+                                            closedir(d_GRP);
+                                            sprintf(out, "RPT NOK\n");
+                                            write(connfd,out,strlen(out));
+                                            return;
+                                        }
+                                        else if(nread==0)
+                                            break;
 
-                                    fwrite(buffer, nread, 1, fileptr);
-                                    nleft -= nread;
-                                }
-                                buffer[0] = '\0';
-                                nread = read(connfd,buffer,nleft);
-                                if(nread==-1){
-                                        closedir(d_MID);
-                                        closedir(d_MSG);
-                                        closedir(d_GID);
-                                        closedir(d_GRP);
-                                        sprintf(out, "RPT NOK\n");
-                                        write(connfd,out,strlen(out));
-                                        return;
+                                        fwrite(buffer, nread, 1, fileptr);
+                                        nleft -= nread;
                                     }
+                                    else{
+                                        buffer[0] = '\0';
+                                        nread = readTCP(connfd,nleft, buffer);
+                                        if(nread==-1){
+                                            closedir(d_MID);
+                                            closedir(d_MSG);
+                                            closedir(d_GID);
+                                            closedir(d_GRP);
+                                            sprintf(out, "RPT NOK\n");
+                                            write(connfd,out,strlen(out));
+                                            return;
+                                        }
+                                        nleft -= nread;
+                                    }
+                                }
+                                
                                 fwrite(buffer, nread, 1, fileptr);
                                 fclose(fileptr);
                             }

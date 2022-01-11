@@ -21,89 +21,91 @@ void processInput(){
     while (fgets(input, sizeof(input)/sizeof(char), stdin)){
         char optype[MAX_OPTYPE_SIZE];
         int i = 0;
+
         while ((input[i] != ' ') && (input[i] != '\n')){
             optype[i] = input[i];
             i++;
         }
         optype[i] = '\0';
-        if (strcmp(optype, "reg") == 0){
+
+        if (memcmp(optype, "reg", 3) == 0){
             if (input[i] == ' '){
                 registerUser(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "unr") == 0) || (strcmp(optype, "unregister") == 0)){
+        else if ((memcmp(optype, "unr", 3) == 0) || (memcmp(optype, "unregister", 10) == 0)){
             if (input[i] == ' '){
                 unregisterUser(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if (strcmp(optype, "login") == 0){
+        else if (memcmp(optype, "login", 5) == 0){
             if (input[i] == ' '){
                 loginUser(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if (strcmp(optype, "logout") == 0){
+        else if (memcmp(optype, "logout", 6) == 0){
             if (strcmp(&input[i], "\n") == 0){
                 logoutUser();
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if (strcmp(optype, "exit") == 0){
+        else if (memcmp(optype, "exit", 4) == 0){
             if (strcmp(&input[i], "\n") == 0){
                 exitSession();
                 break;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "groups") == 0) || (strcmp(optype, "gl") == 0)){
+        else if ((memcmp(optype, "groups", 6) == 0) || (memcmp(optype, "gl", 2) == 0)){
             if (strcmp(&input[i], "\n") == 0){
                 showAvailableGroups();
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "subscribe") == 0) || (strcmp(optype, "s") == 0)){
+        else if ((memcmp(optype, "subscribe", 9) == 0) || (strcmp(optype, "s") == 0)){
             if (input[i] == ' '){
                 subscribeGroup(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "unsubscribe") == 0) || (strcmp(optype, "u") == 0)){
+        else if ((memcmp(optype, "unsubscribe", 11) == 0) || (strcmp(optype, "u") == 0)){
             if (input[i] == ' '){
                 unsubscribeGroup(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "my_groups") == 0) || (strcmp(optype, "mgl") == 0)){
+        else if ((memcmp(optype, "my_groups", 9) == 0) || (memcmp(optype, "mgl", 3) == 0)){
             if (strcmp(&input[i], "\n") == 0){
                 showMyGroups();
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "select") == 0) || (strcmp(optype, "sag") == 0)){
+        else if ((memcmp(optype, "select", 6) == 0) || (memcmp(optype, "sag", 3) == 0)){
             if (input[i] == ' '){
                 selectGroup(&input[i+1]);
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "showgid") == 0) || (strcmp(optype, "sg") == 0)){
+        else if ((memcmp(optype, "showgid", 7) == 0) || (memcmp(optype, "sg", 2) == 0)){
             if (strcmp(&input[i], "\n") == 0){
                 showGIDSelected();
                 continue;
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype,"ulist") == 0) || (strcmp(optype,"ul") == 0)){
+        else if ((memcmp(optype,"ulist", 5) == 0) || (memcmp(optype,"ul", 2) == 0)){
             if (strcmp(&input[i], "\n") == 0){
                 initTCP(hostName, port);
                 listUsers_GID();
@@ -111,7 +113,7 @@ void processInput(){
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if (strcmp(optype, "post") == 0){
+        else if (memcmp(optype, "post", 4) == 0){
             if (input[i] == ' '){
                 initTCP(hostName, port);
                 postMessage(&input[i+1]);
@@ -119,7 +121,7 @@ void processInput(){
             }
             printf("Error: invalid operation: %s", input);
         }
-        else if ((strcmp(optype, "retrieve") == 0) || (strcmp(optype, "r") == 0)){
+        else if ((memcmp(optype, "retrieve", 8) == 0) || (strcmp(optype, "r") == 0)){
             if (input[i] == ' '){
                 initTCP(hostName, port);
                 retrieveMessages(&input[i+1]);
