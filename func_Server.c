@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "func_Server.h"
-#include "Client.h"
 
 char out[MAX_OUT_SIZE];
 
@@ -83,17 +82,26 @@ char* processInput(char *input){
 }
 
 void processInputTCP(int connfd, char *command){
-    char input[5];
+    char input[15];
 
     if(strcmp(command, "PST ")==0){
         postMessageS(connfd);
     }
     else if(strcmp(command, "RTV ")==0){
-        printf("RTV identificado\n");
+        int nread = readTCP(connfd, 14, input);
+        if (nread == 14)
+            retrieveMessagesS(input, connfd);
+        else{
+            writeTCP(connfd, 5, "ERR\n");
+        }
     }
     else if(strcmp(command, "ULS ")==0){
-        readTCP(connfd, 2, input);
-        listUsers_GIDS(input,connfd);
+        int nread = readTCP(connfd, 3, input);
+        if (nread == 3)
+            listUsers_GIDS(input, connfd);
+        else{
+            writeTCP(connfd, 5, "ERR\n");
+        }
     }
     else{
         printf("Error: wrong message format\n");
@@ -109,6 +117,16 @@ int readTCP(int connfd, int n_bytes, char *content){
     } 
     content[nread] = '\0';
     return nread;
+}
+
+int writeTCP(int connfd, int n_bytes, char *content){
+    ssize_t nwrite;
+
+    nwrite=write(connfd, content, n_bytes);
+    if(nwrite<1){
+        exit(1);
+    } 
+    return nwrite;
 }
 
 int validUID(char *input){
@@ -144,6 +162,14 @@ int validGName(char *input){
             return 0;
     }
     return i; // returns size of Group Name
+}
+
+int validMID(char *input){
+    for (int i = 0; input[i] != '\n'; i++){
+        if ((!isdigit(input[i])) || (i >= 4))
+            return 0;
+    }
+    return 1;
 }
 
 int createDir(char *path){
@@ -712,6 +738,77 @@ char *showMyGroupsS(char *input){
     return "RGM E_USR\n";
 }
 
+int validUser(char *user_file){
+    for (int i=0;user_file[i]!='\0';i++){
+        if(!isdigit(user_file[i]))
+            return 0;
+    }
+    return 1;
+}
+
+void listUsers_GIDS(char *input,int connfd){
+    char GID[3], group_dirname[10],G_Name_path[29];
+    
+    char buff[506];
+    DIR * dirp;
+    struct dirent * entry;
+    strncpy(GID,input,2); GID[2] = '\0';
+    sprintf(group_dirname,"GROUPS/%s",GID); group_dirname[9]='\0';
+    dirp = opendir(group_dirname);
+    if(dirp==NULL){
+        if(write(connfd,"RUL NOK\n",strlen("RUL NOK\n"))<0){
+            fprintf(stderr,"ERROR");
+            return;
+        }
+    }
+    sprintf(G_Name_path,"GROUPS/%s/%s_name.txt",GID,GID);
+    FILE *Gname_ptr;
+
+    Gname_ptr = fopen(G_Name_path, "r");
+
+    char G_Name[25];
+    if(fscanf(Gname_ptr, "%s", G_Name)==0){
+        exit(0);
+    }
+
+    char *p = buff;
+    size_t offset = sprintf(buff,"RUL OK %s",G_Name);
+    p += offset;
+
+    int i=strlen(G_Name)+8;
+    while ((entry = readdir(dirp)) != NULL) {
+        
+        if(entry->d_name[0]=='.')
+                continue; 
+        if(strlen(entry->d_name)<5)
+            continue;
+        else{
+            char user_file[6];
+            sscanf(entry->d_name,"%[^.]txt",user_file);
+        
+            if(validUser(user_file)){
+                offset = sprintf(p, " %s", user_file);
+                p += offset;
+                i+=6;
+            }
+            else{
+                continue;
+            }
+            
+            if(i>470){
+                writeTCP(connfd, i, buff);
+                i=0;
+                p = buff;
+            }
+        }
+
+    }
+    sprintf(p, "\n");
+    writeTCP(connfd, strlen(buff), buff);
+    
+    closedir(dirp);
+}
+
 void postMessageS(int connfd){
     char UID[6],GID[3],textSizeC[4],temp[MAX_TEXT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE];
     int i=0, textSize, withFile = 0, fileSize=0;
@@ -965,80 +1062,215 @@ void postMessageS(int connfd){
             printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
         }
         sprintf(out, "RPT %s\n",MID_C);
-        write(connfd,out,strlen(out));
+        writeTCP(connfd, strlen(out), out);
         return;
     }
     sprintf(out, "RPT NOK\n");
-    write(connfd,out,strlen(out));
+    writeTCP(connfd,strlen(out), out);
     return;
 }
 
-int validUser(char *user_file){
-    for (int i=0;user_file[i]!='\0';i++){
-        if(!isdigit(user_file[i]))
-            return 0;
+void retrieveMessagesS(char *input, int connfd){
+    if (!validUID(input) || (input[5] != ' ')){
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
     }
-    return 1;
-}
-void listUsers_GIDS(char *input,int connfd){
-    char GID[3], group_dirname[10],G_Name_path[29];
-    
-    char buff[506];
-    DIR * dirp;
-    struct dirent * entry;
-    strncpy(GID,input,2); GID[2] = '\0';
-    sprintf(group_dirname,"GROUPS/%s",GID); group_dirname[9]='\0';
-    dirp = opendir(group_dirname);
-    if(dirp==NULL){
-        if(write(connfd,"RUL NOK\n",strlen("RUL NOK\n"))<0){
-        }
+    if (!validGID(&input[6]) || (input[8] != ' ')){
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
     }
-    sprintf(G_Name_path,"GROUPS/%s/%s_name.txt",GID,GID);
-    FILE *Gname_ptr;
+    if (!validMID(&input[9]) || (input[13] != '\n')){
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
+    }
 
-    Gname_ptr = fopen(G_Name_path, "r");
+    char UID[6], GID[3], MID[5];
 
-    char G_Name[25];
-    if(fscanf(Gname_ptr, "%s", G_Name)==0){
-        exit(0);
-    }
-    sprintf(buff,"RUL OK %s",G_Name);
-    buff[strlen(G_Name)+7]=' ';
-    buff[strlen(G_Name)+8]='\0';
-    int i=strlen(G_Name)+8;
-    while ((entry = readdir(dirp)) != NULL) {
-        
-        if(entry->d_name[0]=='.')
-                continue; 
-        if(strlen(entry->d_name)<5)
-            continue;
-        else{
-            char user_file[6];
-            sscanf(entry->d_name,"%[^.]txt",user_file);
-            user_file[5]='\0';
-        
-            if(validUser(user_file)){
-                strncpy(&buff[i],user_file,6);
-                buff[i+5]=' ';
-                buff[i+6]='\0';
-                i+=6;
+    strncpy(UID, input, 5); UID[5] = '\0';
+    strncpy(GID, &input[6], 2); GID[2] = '\0';
+    strncpy(MID, &input[9], 4); MID[4] = '\0';
+
+    DIR *d_USR, *d_GRP;
+    struct dirent *dir_usr, *dir_grp;
+    int valid = 0, i = 0;
+    d_USR = opendir("USERS");
+    if (d_USR){
+        while ((dir_usr = readdir(d_USR)) != NULL){
+            if (strcmp(dir_usr->d_name, UID) == 0){
+                valid = 1;
+                break;
             }
-            
-        if(i>20){
-            buff[i]='\n';
-            if(write(connfd,buff,(size_t) i)<0){
-                exit(0);
-            }
-            i=0;
-            memset(buff, 0, sizeof (buff));
+            if (i == 99999)
+                break;
+            i++;
         }
+        closedir(d_USR);
+        if (!valid){
+            writeTCP(connfd, 9, "RRT NOK\n");
+            return;
         }
+    }
+    else{
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
+    }
 
+    valid = 0;
+
+    d_GRP = opendir("GROUPS");
+    if (d_GRP){
+        while ((dir_grp = readdir(d_GRP)) != NULL){
+            if (strcmp(dir_grp->d_name, GID) == 0){
+                valid = 1;
+            }
+            if (i == 99){
+                closedir(d_GRP);
+                writeTCP(connfd, 9, "RRT NOK\n");
+                return;
+            }
+            i++;
+        }
+        closedir(d_GRP);
+        if (!valid){
+            writeTCP(connfd, 9, "RRT NOK\n");
+            return;
+        }
     }
-    buff[i]='\n';
-    if(write(connfd,buff,strlen(buff))<0) {
-        exit(0);
+    else{
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
     }
+
+    char GMIDpath[30];
+    sprintf(GMIDpath, "GROUPS/%s/MSG", GID);
     
-    closedir(dirp);
+    struct dirent *dir_msg;
+    int n_groups = 0;
+    DIR *d_MID = opendir(GMIDpath);
+    if (d_MID){
+        while ((dir_msg = readdir(d_MID)) != NULL){
+            if (atoi(dir_msg->d_name) >= atoi(MID)){
+                n_groups += 1;
+            }
+            if (i == 9999){
+                closedir(d_MID);
+                writeTCP(connfd, 9, "RRT NOK\n");
+                return;
+            }
+            i++;
+        }
+        closedir(d_MID);
+    }
+    else{
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
+    }
+
+    if (n_groups == 0){
+        writeTCP(connfd, 11, "RRT EOF 0\n");
+        return;
+    }
+
+    char *p = out;
+    size_t offset = sprintf(p, "RRT OK %d", n_groups);
+    p += offset;
+
+    d_MID = opendir(GMIDpath);
+    if (d_MID){
+        while ((dir_msg = readdir(d_MID)) != NULL){
+            if(dir_msg->d_name[0]=='.')
+                continue;
+            if (n_groups == 0){
+                writeTCP(connfd, 1, "\n");
+                break;
+            }
+            if (atoi(dir_msg->d_name) >= atoi(MID)){
+                char MUIDpath[40], MTEXTpath[40], MID_tmp[5];
+
+                strncpy(MID_tmp, dir_msg->d_name, 4);
+                MID_tmp[4] = '\0';
+                
+                sprintf(MUIDpath, "GROUPS/%s/MSG/%s/A U T H O R.txt", GID, MID_tmp);
+                FILE *fp = fopen(MUIDpath, "r");
+                if (fp){
+                    if (!fscanf(fp, "%s", UID))
+                        return;
+                    fclose(fp);
+                }
+                else{
+                    writeTCP(connfd, 9, "RRT NOK\n");
+                    return;
+                }
+
+                sprintf(MTEXTpath, "GROUPS/%s/MSG/%s/T E X T.txt", GID, MID_tmp);
+                fp = fopen(MTEXTpath, "rb");
+                if (fp){
+                    fseek(fp, 0, SEEK_END);
+                    int filesize = ftell(fp);
+                    fseek(fp,0,SEEK_SET);
+                    char text[MAX_TEXT_SIZE];
+                    if (!fread(text, filesize, 1, fp))
+                        return;
+                    text[filesize] = '\0';
+                    fclose(fp);
+                    sprintf(p, " %s %s %d %s", MID_tmp, UID, filesize, text);
+                    writeTCP(connfd, strlen(out), out);
+                    p = out;
+                }
+                else{
+                    writeTCP(connfd, 9, "RRT NOK\n");
+                    return;
+                }
+                char MIDpath[40];
+                sprintf(MIDpath, "GROUPS/%s/MSG/%s", GID, MID_tmp);
+                DIR *d_msg = opendir(MIDpath);
+                while ((dir_msg = readdir(d_msg)) != NULL){
+                    if(dir_msg->d_name[0]=='.')
+                        continue;
+                    if (dir_msg->d_type == DT_REG){
+                        if (strcmp(dir_msg->d_name, "A U T H O R.txt") != 0){
+                            if (strcmp(dir_msg->d_name, "T E X T.txt") != 0){
+                                char MFILEpath[300];
+                                sprintf(MFILEpath, "GROUPS/%s/MSG/%s/%s", GID, MID_tmp, dir_msg->d_name);
+                                FILE *fptr = fopen(MFILEpath, "r");
+                                if (fptr){
+                                    fseek(fptr, 0, SEEK_END);
+                                    int filesize = ftell(fptr);
+                                    sprintf(out, " / %s %d ", dir_msg->d_name, filesize);
+                                    writeTCP(connfd, strlen(out), out);
+                                    fseek(fptr,0,SEEK_SET);
+                                    while (filesize > 0){
+                                        int nwritten;
+                                        if (filesize > 512){
+                                            if (!fread(out, 512, 1, fptr))
+                                                return;
+                                            out[512] = '\0';
+                                            nwritten = writeTCP(connfd, 512, out);
+                                        }
+                                        else{
+                                            if (!fread(out, filesize, 1, fptr))
+                                                return;
+                                            out[filesize] = '\0';
+                                            nwritten = writeTCP(connfd, filesize, out);
+                                        }
+                                        filesize -= nwritten;
+                                    }
+                                    fclose(fptr);
+                                }
+                            }
+                        }
+                    }
+                }
+                n_groups--;
+            }
+        }
+        closedir(d_MID);
+    }
+    else{
+        writeTCP(connfd, 9, "RRT NOK\n");
+        return;
+    }
+
+    return;
+    
 }
