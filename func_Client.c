@@ -551,18 +551,24 @@ void postMessage(char *input){
         connectTCP();
         writeTCP(in,strlen(in));
         nleft = sizeFile;
-        while(nleft>512){
-            if (!fread(buffer_post, 512, 1, fptr))
-                return;
-            nwritten = writeTCP(buffer_post,512);
-            if(nwritten<0){
-                printf("Error: error sending file\n");
-                closeTCP();
+        while(nleft>0){
+            buffer_post[0] = '\0';
+            if(nleft > 512){
+                if (!fread(buffer_post, 1, 512, fptr))
+                    return;
+                nwritten = writeTCP(buffer_post,512);
+                if(nwritten <= 0){
+                    printf("Error: error sending file\n");
+                    closeTCP();
+                }
+            }
+            else{
+                if (!fread(buffer_post, 1, nleft, fptr))
+                    return;
+                nwritten = writeTCP(buffer_post,nleft);
             }
             nleft -= nwritten;
         }
-        buffer_post[0] = '\0';
-        writeTCP(buffer_post,nleft);
         fclose(fptr);
     }
     readTCP(9,buffer_tcp);
