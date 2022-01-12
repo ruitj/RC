@@ -406,7 +406,7 @@ char *logoutUserS(char* input){
 
 char *showAvailableGroupsS(){
     char list_groups[MAX_OUT_SIZE-20];
-    char GNamepath[30], MIDpath[30], GID[3], GName[24], MID[5];
+    char GNamepath[30], MIDpath[30], GID[3], GName[24], MID[12];
     DIR *d;
     struct dirent *dir;
     int n_groups = 0;
@@ -436,16 +436,26 @@ char *showAvailableGroupsS(){
             sprintf(MIDpath, "GROUPS/%s/MSG", GID);
             DIR *d_msg = opendir(MIDpath);
             struct dirent *msgdir;
+            short int latest = 0;
             if (d_msg){
-                strcpy(MID, "0000");
                 while ((msgdir = readdir(d_msg)) != NULL){
                     if(msgdir->d_name[0]=='.')
                         continue;
                     if(strlen(msgdir->d_name) != 4)
                         continue;
-                    strcpy(MID, msgdir->d_name);
+                    if (atoi(msgdir->d_name) > latest){
+                        latest = atoi(msgdir->d_name);
+                    }
                 }
-                MID[4] = '\0';
+                if (latest < 10)
+                    sprintf(MID, "000%d", latest);
+                else if (latest < 100)
+                    sprintf(MID, "00%d", latest);
+                else if (latest < 1000)
+                    sprintf(MID, "0%d", latest);
+                else if (latest < 10000)
+                    sprintf(MID, "%d", latest);
+
                 closedir(d_msg);
             }
             size_t offset = sprintf(p, " %s %s %s", GID, GName, MID);
@@ -689,7 +699,7 @@ char *showMyGroupsS(char *input){
             return "RGM E_USR\n";
     }
 
-    char GNamepath[30], MIDpath[30], UIDPath[30], GID[3], GName[24], MID[5];
+    char GNamepath[30], MIDpath[30], UIDPath[30], GID[3], GName[24], MID[12];
     char list_groups[MAX_OUT_SIZE-20];
     int n_groups = 0;
     FILE *fp;
@@ -720,16 +730,26 @@ char *showMyGroupsS(char *input){
             sprintf(MIDpath, "GROUPS/%s/MSG", GID);
             DIR *d_msg = opendir(MIDpath);
             struct dirent *msgdir;
+            short int latest = 0;
             if (d_msg){
-                strcpy(MID, "0000");
                 while ((msgdir = readdir(d_msg)) != NULL){
                     if(msgdir->d_name[0]=='.')
                         continue;
                     if(strlen(msgdir->d_name) != 4)
                         continue;
-                    strcpy(MID, msgdir->d_name);
+                    if (atoi(msgdir->d_name) > latest){
+                        latest = atoi(msgdir->d_name);
+                    }
                 }
-                MID[4] = '\0';
+                if (latest < 10)
+                    sprintf(MID, "000%d", latest);
+                else if (latest < 100)
+                    sprintf(MID, "00%d", latest);
+                else if (latest < 1000)
+                    sprintf(MID, "0%d", latest);
+                else if (latest < 10000)
+                    sprintf(MID, "%d", latest);
+            
                 closedir(d_msg);
             }
 
