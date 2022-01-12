@@ -481,7 +481,7 @@ void listUsers_GID(){
 }
 
 void postMessage(char *input){
-    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer_post[512];
+    char in[MAX_INPUT_SIZE], text[MAX_TEXT_SIZE], FName[MAX_FNAME_SIZE], buffer_post[513];
     int spaceIndex=-1, withFile=0, sizeFile=0, duasAspas=0;
     ssize_t nwritten, nleft;
     FILE *fptr;
@@ -535,8 +535,16 @@ void postMessage(char *input){
         writeTCP(in,strlen(in));
     }
     else{
-        strcpy(FName,&input[spaceIndex+1]);
-        FName[strlen(FName)-1] = '\0';
+        i = 1;
+        while(input[spaceIndex+i] != '\n'){
+            if (i > 24){
+                printf("Error: filename too long\n");
+                return;
+            }
+            FName[i-1] = input[spaceIndex+i];
+            i++;
+        }
+        FName[i-1] = '\0';
         fptr = fopen(FName,"rb");
         if (fptr == NULL){
             printf("Error: file cannot be opened\n");
@@ -546,7 +554,6 @@ void postMessage(char *input){
         fseek(fptr,0,SEEK_END);
         sizeFile = ftell(fptr);
         fseek(fptr,0,SEEK_SET);
-        //falta enviar o ficheiro
         sprintf(in, "PST %s %s %lu %s %s %d ", savedUID, savedGID, strlen(text), text, FName, sizeFile);
         connectTCP();
         writeTCP(in,strlen(in));
@@ -556,6 +563,7 @@ void postMessage(char *input){
             if(nleft > 512){
                 if (!fread(buffer_post, 1, 512, fptr))
                     return;
+                buffer_post[512] = '\0';
                 nwritten = writeTCP(buffer_post,512);
                 if(nwritten <= 0){
                     printf("Error: error sending file\n");
@@ -565,6 +573,7 @@ void postMessage(char *input){
             else{
                 if (!fread(buffer_post, 1, nleft, fptr))
                     return;
+                buffer_post[nleft] = '\0';
                 nwritten = writeTCP(buffer_post,nleft);
             }
             nleft -= nwritten;

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "func_Server.h"
-#define PORT_DEFAULT 58033
+#define PORT_DEFAULT "58033"
 #define MAXLINE 1024
 
 char port[10];
@@ -38,7 +38,7 @@ int receivecmd(){
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT_DEFAULT);
+    servaddr.sin_port = htons(atoi(port));
  
     // binding server addr structure to listenfd
     bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
@@ -70,8 +70,8 @@ int receivecmd(){
                 connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
                 bzero(buffer, sizeof(buffer));
                 if(read(connfd,input,4)>0){
-                    /*if (verbose_mode)
-                        printf("Message received from:\nIP: %s\nPort: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));*/
+                    if (verbose_mode)
+                        printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                     processInputTCP(connfd,input);
                 }
                 close(connfd);
@@ -81,6 +81,8 @@ int receivecmd(){
                 len = sizeof(cliaddr);
                 bzero(buffer, sizeof(buffer));
                 if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
+                    if (verbose_mode)
+                        printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                     out = processInput(buffer);
                     sendto(udpfd, (const char*)out, strlen(out), 0,(struct sockaddr*)&cliaddr, sizeof(cliaddr));
                 }
@@ -89,7 +91,7 @@ int receivecmd(){
     }
 }
 
-/*int parseArgs(int n, char **args){
+int parseArgs(int n, char **args){
     if (n > 1){
         if (n >= 3){
             if (strcmp(args[1], "-p") == 0){
@@ -117,18 +119,22 @@ int receivecmd(){
             return 0;
         }
     }
+    else{
+        sprintf(port, "%s", PORT_DEFAULT);
+    }
     return 1;
-}*/
+}
 
 int main(int argc, char **argv){
 
     //input parsing
-    //int p = parseArgs(argc, argv);
-    //if (p){
+    int p = parseArgs(argc, argv);
+    if (p){
+        initSession(verbose_mode);
         receivecmd();   
-    //}
-    //else{
-     //   printf("Error: invalid input arguments\n");
-    //}
+    }
+    else{
+        printf("Error: invalid input arguments\n");
+    }
     return 0;
 }

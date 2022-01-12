@@ -2,6 +2,7 @@
 
 char *processInput(char *input);
 void processInputTCP(int connfd, char *command);
+void initSession(int verbose_mode);
 int readTCP(int connfd, int n_bytes, char *content);
 int writeTCP(int connfd, int n_bytes, char *content);
 char *registerUserS(char *input);

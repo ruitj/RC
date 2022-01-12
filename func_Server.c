@@ -10,6 +10,7 @@
 #include "func_Server.h"
 
 char out[MAX_OUT_SIZE];
+int v_mode = 0;
 
 char* processInput(char *input){
     char command[4], *out=NULL;
@@ -104,6 +105,11 @@ void processInputTCP(int connfd, char *command){
         printf("Error: wrong message format\n");
         writeTCP(connfd, 5, "ERR\n");
     }
+}
+
+void initSession(int verbose_mode){
+    if (verbose_mode)
+        v_mode = 1;
 }
 
 int readTCP(int connfd, int n_bytes, char *content){
@@ -238,7 +244,6 @@ char* registerUserS(char *input){
     strncpy(password, &input[6],8); password[8] = '\0';
     sprintf(user_dirname,"USERS/%s",UID);
     if(access(user_dirname, F_OK ) == 0 ){
-        
         sprintf(out,"RRG DUP\n");
     }
     else{
@@ -877,11 +882,16 @@ void postMessageS(int connfd){
     if(withFile){
         //get FName
         i=0;
+        readTCP(connfd, 1, temp);
         while(temp[0] != ' '){
-            readTCP(connfd, 1, temp);
-            //verification here
+            if (i > 23){
+                sprintf(out, "RPT NOK\n");
+                writeTCP(connfd,strlen(out), out);
+                return;
+            }
             FName[i] = temp[0];
             i++;
+            readTCP(connfd, 1, temp);
         }
         FName[i] = '\0';
 
@@ -889,16 +899,18 @@ void postMessageS(int connfd){
         temp[0] = '\0';
         i=0;
         while(temp[0] != ' '){
+            if (i > 9){
+                sprintf(out, "RPT NOK\n");
+                writeTCP(connfd,strlen(out), out);
+                return;
+            }
+            if (i==0){
+                fileSize = atoi(temp);
+            }
+            else{
+                fileSize = fileSize*10 + atoi(temp);
+            }
             readTCP(connfd, 1, temp);
-            //verification here
-            if(temp[0] != ' '){
-                if (i==0){
-                    fileSize = atoi(temp);
-                }
-                else{
-                    fileSize = fileSize*10 + atoi(temp);
-                }
-            }   
             i++;
         }
     }
@@ -1000,12 +1012,12 @@ void postMessageS(int connfd){
                                 //if there's a file attached to the message
                                 //read from tcp
                                 ssize_t nbytes = fileSize, nread, nleft;
-                                char buffer[512];
+                                char buffer[513];
                                 FILE *fileptr;
 
                                 sprintf(rcvFilePath,"GROUPS/%s/MSG/%s/%s",GID,MID_C,FName);
 
-                                fileptr = fopen(rcvFilePath, "a+b");
+                                fileptr = fopen(rcvFilePath, "wb");
                                 if (fileptr == NULL){
                                     closedir(d_MID);
                                     closedir(d_MSG);
@@ -1022,6 +1034,7 @@ void postMessageS(int connfd){
                                 while(nleft>0){
                                     if (nleft > 512){
                                         nread = readTCP(connfd, 512, buffer);
+                                        buffer[nread] = '\0';
                                         if(nread==-1){
                                             closedir(d_MID);
                                             closedir(d_MSG);
@@ -1041,6 +1054,7 @@ void postMessageS(int connfd){
                                     else{
                                         buffer[0] = '\0';
                                         nread = readTCP(connfd,nleft, buffer);
+                                        buffer[nread] = '\0';
                                         if(nread==-1){
                                             closedir(d_MID);
                                             closedir(d_MSG);
@@ -1156,19 +1170,19 @@ void retrieveMessagesS(char *input, int connfd){
     sprintf(GMIDpath, "GROUPS/%s/MSG", GID);
     
     struct dirent *dir_msg;
-    int n_groups = 0;
+    int n_msgs = 0;
     DIR *d_MID = opendir(GMIDpath);
     if (d_MID){
         while ((dir_msg = readdir(d_MID)) != NULL){
             if (atoi(dir_msg->d_name) >= atoi(MID)){
-                n_groups += 1;
+                n_msgs += 1;
             }
             if (i == 9999){
                 closedir(d_MID);
                 writeTCP(connfd, 9, "RRT NOK\n");
                 return;
             }
-            if (n_groups == 20){
+            if (n_msgs == 20){
                 break;
             }
             i++;
@@ -1180,13 +1194,16 @@ void retrieveMessagesS(char *input, int connfd){
         return;
     }
 
-    if (n_groups == 0){
+    if (n_msgs == 0){
+        printf("UID=%s: retrieve group %s, no messages to retrieve\n", UID, GID);
         writeTCP(connfd, 11, "RRT EOF 0\n");
         return;
     }
 
+    printf("UID=%s: retrieve group %s, %d message(s):\n", UID, GID, n_msgs);
+
     char *p = out;
-    size_t offset = sprintf(p, "RRT OK %d", n_groups);
+    size_t offset = sprintf(p, "RRT OK %d", n_msgs);
     p += offset;
 
     d_MID = opendir(GMIDpath);
@@ -1194,7 +1211,7 @@ void retrieveMessagesS(char *input, int connfd){
         while ((dir_msg = readdir(d_MID)) != NULL){
             if(dir_msg->d_name[0]=='.')
                 continue;
-            if (n_groups == 0){
+            if (n_msgs == 0){
                 writeTCP(connfd, 1, "\n");
                 break;
             }
@@ -1218,6 +1235,7 @@ void retrieveMessagesS(char *input, int connfd){
 
                 sprintf(MTEXTpath, "GROUPS/%s/MSG/%s/T E X T.txt", GID, MID_tmp);
                 fp = fopen(MTEXTpath, "rb");
+                char text[MAX_TEXT_SIZE];
                 if (fp){
                     fseek(fp, 0, SEEK_END);
                     int filesize = ftell(fp);
@@ -1235,9 +1253,10 @@ void retrieveMessagesS(char *input, int connfd){
                     writeTCP(connfd, 9, "RRT NOK\n");
                     return;
                 }
-                char MIDpath[40];
+                char MIDpath[40], FName[260];
                 sprintf(MIDpath, "GROUPS/%s/MSG/%s", GID, MID_tmp);
                 DIR *d_msg = opendir(MIDpath);
+                int withFile = 0;
                 while ((dir_msg = readdir(d_msg)) != NULL){
                     if(dir_msg->d_name[0]=='.')
                         continue;
@@ -1247,7 +1266,9 @@ void retrieveMessagesS(char *input, int connfd){
                                 char MFILEpath[300];
                                 sprintf(MFILEpath, "GROUPS/%s/MSG/%s/%s", GID, MID_tmp, dir_msg->d_name);
                                 FILE *fptr = fopen(MFILEpath, "rb");
+                                sprintf(FName, "%s", dir_msg->d_name);
                                 if (fptr){
+                                    withFile = 1;
                                     fseek(fptr, 0, SEEK_END);
                                     int filesize = ftell(fptr);
                                     sprintf(out, " / %s %d ", dir_msg->d_name, filesize);
@@ -1275,7 +1296,13 @@ void retrieveMessagesS(char *input, int connfd){
                         }
                     }
                 }
-                n_groups--;
+                if (withFile){
+                    printf("%s - %s \"%s\" %s\n", MID_tmp, UID, text, FName);
+                }
+                else{
+                    printf("%s - %s \"%s\"\n", MID_tmp, UID, text);
+                }
+                n_msgs--;
             }
         }
         closedir(d_MID);
