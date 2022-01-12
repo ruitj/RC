@@ -13,65 +13,38 @@ char out[MAX_OUT_SIZE];
 int v_mode = 0;
 
 char* processInput(char *input){
-    char command[4], *out=NULL;
-    strncpy(command, input, 3);
-    command[3] = '\0';
+    char command[5], *out=NULL;
 
-    if (strcmp(command, "REG") == 0){
-        if (input[3] == ' ')
-            out = registerUserS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    int size = strlen(input);
+    if (size < 4)
+        return "ERR\n";
+
+    strncpy(command, input, 4);
+    command[4] = '\0';
+
+    if (strcmp(command, "REG ") == 0){
+        out = registerUserS(&input[4]);
     }
-    else if (strcmp(command, "UNR") == 0){
-        if (input[3] == ' ')
-            out = unregisterUserS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "UNR ") == 0){
+        out = unregisterUserS(&input[4]);
     }
-    else if (strcmp(command, "LOG") == 0){
-        if (input[3] == ' ')
-            out = loginUserS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "LOG ") == 0){
+        out = loginUserS(&input[4]);
     }
-    else if (strcmp(command, "OUT") == 0){
-        if (input[3] == ' ')
-            out = logoutUserS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "OUT ") == 0){
+        out = logoutUserS(&input[4]);
     }
-    else if (strcmp(command, "GLS") == 0){
-        if (input[3] == '\n')
-            out = showAvailableGroupsS();
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "GLS\n") == 0){
+        out = showAvailableGroupsS();
     }
-    else if (strcmp(command, "GSR") == 0){
-        if (input[3] == ' ')
-            out = subscribeGroupS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "GSR ") == 0){
+        out = subscribeGroupS(&input[4]);
     }
-    else if (strcmp(command, "GUR") == 0){
-        if (input[3] == ' ')
-            out = unsubscribeGroupS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "GUR ") == 0){
+        out = unsubscribeGroupS(&input[4]);
     }
-    else if (strcmp(command, "GLM") == 0){
-        if (input[3] == ' ')
-            out = showMyGroupsS(&input[4]);
-        else{
-            return "ERR\n";
-        }
+    else if (strcmp(command, "GLM ") == 0){
+        out = showMyGroupsS(&input[4]);
     }
     else{
         return "ERR\n";
@@ -222,7 +195,7 @@ char* registerUserS(char *input){
    
     while ((entry = readdir(dirp)) != NULL) {
         if (strlen(entry->d_name)==5) { 
-         file_count++;
+            file_count++;
         }   
     }
     closedir(dirp);
@@ -241,21 +214,27 @@ char* registerUserS(char *input){
         return "RRG NOK\n";
     }
 
-    strncpy(UID, input,5); UID[5] = '\0';
-    strncpy(password, &input[6],8); password[8] = '\0';
+    strncpy(UID, input, 5); UID[5] = '\0';
+    strncpy(password, &input[6], 8); password[8] = '\0';
     sprintf(user_dirname,"USERS/%s",UID);
     if(access(user_dirname, F_OK ) == 0 ){
+        if (v_mode)
+            printf("UID=%s already registered\n", UID);
         sprintf(out,"RRG DUP\n");
     }
     else{
         char user_password[30];
-    
-        mkdir(user_dirname,0700);
+        if (!createDir(user_dirname)){
+            printf("Register error: Could not create dir\n");
+            return "RRG NOK\n";
+        }
+
         sprintf(user_password,"USERS/%s/%s_pass.txt",UID,UID);
-        FILE *password_file;
-        password_file=fopen(user_password,"w");
-        fputs(password,password_file);
-        fclose(password_file);
+        if (!createFile(user_password, password)){
+            printf("Register error: Could not create pass .txt\n");
+            return "RRG NOK\n";
+        }
+        
         sprintf(out,"RRG OK\n");
         if (v_mode)
             printf("UID=%s: new user\n", UID);
@@ -267,6 +246,7 @@ char* unregisterUserS(char *input){
     char UID[MAX_UID_SIZE], password[MAX_PASS_SIZE],realPassword[MAX_PASS_SIZE];
     char passPath[50], UIDPath[50], loginPath[50];
     FILE *pass_txt;
+
     //get UID and password from input
     //get real password from user
     //check if input password is correct
@@ -288,10 +268,17 @@ char* unregisterUserS(char *input){
     sprintf(passPath,"USERS/%s/%s_pass.txt",UID,UID);
     sprintf(UIDPath,"USERS/%s",UID);
     pass_txt = fopen(passPath, "r");
-    if(fscanf(pass_txt, "%s", realPassword)==0){
-        exit(0);
+    if (pass_txt){
+        if(fscanf(pass_txt, "%s", realPassword)==0){
+            exit(EXIT_FAILURE);
+        }
+        fclose(pass_txt);
     }
-    fclose(pass_txt);
+    else{
+        if (v_mode)
+            printf("UID=%s not registered\n", UID);
+        return "RUN NOK\n";
+    }
 
     if(strcmp(password,realPassword)==0){
         if(access(loginPath, F_OK ) == 0 ){
@@ -350,10 +337,13 @@ char* loginUserS(char *input){
             fclose(login_ptr);
         }
         else{
+            if (v_mode)
+                printf("Login error: incorrect password\n");
             sprintf(out,"RLO NOK\n");
         }
     }
-    else {
+    else{
+        printf("Login error: UID=%s not registered", UID);
         sprintf(out,"RLO NOK\n");
     }
     return out;
@@ -381,10 +371,16 @@ char *logoutUserS(char* input){
 
     sprintf(pathname,"USERS/%s/%s_pass.txt",UID,UID);
     pass_txt = fopen(pathname, "r");
-    if(fscanf(pass_txt, "%s", realPassword)==0){
-        exit(0);
+    if (pass_txt){
+        if(fscanf(pass_txt, "%s", realPassword)==0){
+            exit(0);
+        }
+        fclose(pass_txt);
     }
-    fclose(pass_txt);
+    else{
+        printf("Logout error: User not registered");
+        return "ROU NOK\n";
+    }
 
     sprintf(pathname,"USERS/%s/%s_login.txt",UID,UID);
 
@@ -399,7 +395,8 @@ char *logoutUserS(char* input){
         }
     }
     else{
-
+        if (v_mode)
+            printf("Logout error: Incorrect password\n");
         return "ROU NOK\n";
     }
 }
@@ -420,7 +417,7 @@ char *showAvailableGroupsS(){
         while ((dir = readdir(d)) != NULL){
             if(dir->d_name[0]=='.')
                 continue;
-            if(strlen(dir->d_name)>2)
+            if(strlen(dir->d_name)!=2)
                 continue;
             strcpy(GID, dir->d_name);
             GID[2] = '\0';
@@ -502,6 +499,8 @@ char *subscribeGroupS(char *input){
     d_USR = opendir("USERS");
     if (d_USR){
         while ((dir_usr = readdir(d_USR)) != NULL){
+            if(dir_usr->d_name[0]=='.')
+                continue;
             if (strcmp(dir_usr->d_name, UID) == 0){
                 valid = 1;
                 break;
@@ -519,6 +518,8 @@ char *subscribeGroupS(char *input){
     if (d_GRP){
         if (strcmp(GID, "00") != 0){
             while ((dir_grp = readdir(d_GRP)) != NULL){
+                if(dir_grp->d_name[0]=='.')
+                    continue;
                 if (strcmp(dir_grp->d_name, GID) == 0){
                     char GNamepath[24];
                     sprintf(GNamepath, "GROUPS/%s/%s_name.txt", GID, GID);
@@ -568,8 +569,11 @@ char *subscribeGroupS(char *input){
             closedir(d_GRP);
             max++;
             
-            if (max == 99)
+            if (max == 99){
+                if (v_mode)
+                    printf("Subscribe error: Maximum number of groups exceeded\n");
                 return "RGS E_FULL\n";
+            }
             char newGID[8];
             if (max < 10)
                 sprintf(newGID, "0%d", max);
@@ -627,6 +631,8 @@ char *unsubscribeGroupS(char *input){
     d_USR = opendir("USERS");
     if (d_USR){
         while ((dir_usr = readdir(d_USR)) != NULL){
+            if(dir_usr->d_name[0]=='.')
+                continue;
             if (strcmp(dir_usr->d_name, UID) == 0){
                 valid = 1;
                 break;
@@ -644,18 +650,19 @@ char *unsubscribeGroupS(char *input){
     d_GRP = opendir("GROUPS");
     if (d_GRP){
         while ((dir_grp = readdir(d_GRP)) != NULL){
+            if(dir_grp->d_name[0]=='.')
+                continue;
             if (strcmp(dir_grp->d_name, GID) == 0){
                 valid = 1;
-            }
-            if (i == 99){
-                closedir(d_GRP);
-                return "RGU E_FULL\n";
             }
             i++;
         }
         closedir(d_GRP);
-        if (!valid)
+        if (!valid){
+            if (v_mode)
+                printf("Unsubscribe error: Non-existing group GID=%s\n", GID);
             return "RGU NOK\n";
+        }
         
         char GIDPath[24];
         sprintf(GIDPath, "GROUPS/%s/%s.txt", GID, UID);
@@ -686,6 +693,8 @@ char *showMyGroupsS(char *input){
     d_USR = opendir("USERS");
     if (d_USR){
         while ((dir_usr = readdir(d_USR)) != NULL){
+            if(dir_usr->d_name[0]=='.')
+                continue;
             if (strcmp(dir_usr->d_name, UID) == 0){
                 valid = 1;
                 break;
@@ -771,14 +780,6 @@ char *showMyGroupsS(char *input){
     return "RGM E_USR\n";
 }
 
-int validUser(char *user_file){
-    for (int i=0;user_file[i]!='\0';i++){
-        if(!isdigit(user_file[i]))
-            return 0;
-    }
-    return 1;
-}
-
 void listUsers_GIDS(char *input,int connfd){
     char GID[3], group_dirname[10],G_Name_path[29];
     
@@ -794,14 +795,19 @@ void listUsers_GIDS(char *input,int connfd){
             return;
         }
     }
+
     sprintf(G_Name_path,"GROUPS/%s/%s_name.txt",GID,GID);
-    FILE *Gname_ptr;
-
-    Gname_ptr = fopen(G_Name_path, "r");
-
     char G_Name[25];
-    if(fscanf(Gname_ptr, "%s", G_Name)==0){
-        exit(0);
+    FILE *Gname_ptr = fopen(G_Name_path, "r");
+    if (Gname_ptr){
+        if(fscanf(Gname_ptr, "%s", G_Name)==0){
+            exit(EXIT_FAILURE);
+        }
+        fclose(Gname_ptr);
+    }
+    else{
+        writeTCP(connfd, 9, "RUL NOK\n");
+        return;
     }
 
     char *p = buff;
@@ -810,7 +816,6 @@ void listUsers_GIDS(char *input,int connfd){
 
     int i=strlen(G_Name)+8;
     while ((entry = readdir(dirp)) != NULL) {
-        
         if(entry->d_name[0]=='.')
             continue; 
         if(strlen(entry->d_name)<5)
@@ -819,7 +824,7 @@ void listUsers_GIDS(char *input,int connfd){
             char user_file[6];
             sscanf(entry->d_name,"%[^.]txt",user_file);
         
-            if(validUser(user_file)){
+            if(validUID(user_file)){
                 offset = sprintf(p, " %s", user_file);
                 p += offset;
                 i+=6;
@@ -958,6 +963,8 @@ void postMessageS(int connfd){
     if (d_GRP){
         while ((dir_grp = readdir(d_GRP)) != NULL){
             //check if group exists
+            if(dir_grp->d_name[0]=='.')
+                continue;
             if (strcmp(dir_grp->d_name, GID) == 0){
                 //open group folder
                 sprintf(GIDpath, "GROUPS/%s",GID);
@@ -978,6 +985,8 @@ void postMessageS(int connfd){
                     if (d_MSG){
                         //get next MID
                         while ((dir_grp = readdir(d_MSG)) != NULL){
+                            if(dir_grp->d_name[0]=='.')
+                                continue;
                             MID = atoi(dir_grp->d_name);
                             if (MID > max)
                                 max = MID;
@@ -1155,6 +1164,8 @@ void retrieveMessagesS(char *input, int connfd){
     d_USR = opendir("USERS");
     if (d_USR){
         while ((dir_usr = readdir(d_USR)) != NULL){
+            if(dir_usr->d_name[0]=='.')
+                continue;
             if (strcmp(dir_usr->d_name, UID) == 0){
                 valid = 1;
                 break;
@@ -1179,6 +1190,8 @@ void retrieveMessagesS(char *input, int connfd){
     d_GRP = opendir("GROUPS");
     if (d_GRP){
         while ((dir_grp = readdir(d_GRP)) != NULL){
+            if(dir_grp->d_name[0]=='.')
+                continue;
             if (strcmp(dir_grp->d_name, GID) == 0){
                 valid = 1;
             }
@@ -1208,6 +1221,8 @@ void retrieveMessagesS(char *input, int connfd){
     DIR *d_MID = opendir(GMIDpath);
     if (d_MID){
         while ((dir_msg = readdir(d_MID)) != NULL){
+            if(dir_msg->d_name[0]=='.')
+                continue;
             if (atoi(dir_msg->d_name) >= atoi(MID)){
                 n_msgs += 1;
             }

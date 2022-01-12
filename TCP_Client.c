@@ -28,7 +28,10 @@ void initTCP(char hostName[], char port[]){
 
 void connectTCP(){
     n_tcp=connect(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen);
-    if(n_tcp==-1) exit(1);
+    if(n_tcp==-1){
+        fprintf(stderr, "Error: could not connect to server\n");
+        exit(1);
+    }
 }
 
 int writeTCP(char *msg, int n_bytes){

@@ -40,9 +40,18 @@ int receivecmd(){
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(atoi(port));
  
+    int n;
     // binding server addr structure to listenfd
-    bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
-    listen(listenfd, 10);
+    n = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+    if (n != 0){
+        fprintf(stderr, "Error: bind failure\n");
+        exit(EXIT_FAILURE);
+    }
+    n = listen(listenfd, 10);
+    if (n != 0){
+        fprintf(stderr, "Error: listen failure\n");
+        exit(EXIT_FAILURE);
+    }
  
     /* create UDP socket */
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -68,11 +77,13 @@ int receivecmd(){
             if (FD_ISSET(listenfd, &rset)) {
                 len = sizeof(cliaddr);
                 connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
-                bzero(buffer, sizeof(buffer));
-                if(read(connfd,input,4)>0){
-                    if (verbose_mode)
-                        printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
-                    processInputTCP(connfd,input);
+                if (connfd != -1){
+                    bzero(buffer, sizeof(buffer));
+                    if(read(connfd,input,4)>0){
+                        if (verbose_mode)
+                            printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
+                        processInputTCP(connfd,input);
+                    }
                 }
                 close(connfd);
             }
