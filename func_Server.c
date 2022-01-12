@@ -102,7 +102,8 @@ void processInputTCP(int connfd, char *command){
         }
     }
     else{
-        printf("Error: wrong message format\n");
+        if (v_mode)
+            printf("Error: wrong message format\n");
         writeTCP(connfd, 5, "ERR\n");
     }
 }
@@ -256,7 +257,8 @@ char* registerUserS(char *input){
         fputs(password,password_file);
         fclose(password_file);
         sprintf(out,"RRG OK\n");
-        printf("UID=%s: new user\n", UID);
+        if (v_mode)
+            printf("UID=%s: new user\n", UID);
     }
     return out;
 }
@@ -298,7 +300,8 @@ char* unregisterUserS(char *input){
             }
         }
         if (deleteFile(passPath) && deleteDir(UIDPath)){
-            printf("UID=%s: unregistered user\n", UID);
+            if (v_mode)
+                printf("UID=%s: unregistered user\n", UID);
             return "RUN OK\n";
         }
     }
@@ -341,7 +344,8 @@ char* loginUserS(char *input){
                 sprintf(out,"RLO NOK\n");
             }
             else{
-                printf("UID=%s: login ok\n", UID);
+                if (v_mode)
+                    printf("UID=%s: login ok\n", UID);
             }
             fclose(login_ptr);
         }
@@ -386,7 +390,8 @@ char *logoutUserS(char* input){
 
     if(strcmp(password,realPassword)==0){
         if(deleteFile(pathname)){
-            printf("UID=%s: logout ok\n", UID);
+            if (v_mode)
+                printf("UID=%s: logout ok\n", UID);
             return "ROU OK\n";
         }
         else{
@@ -536,7 +541,8 @@ char *subscribeGroupS(char *input){
             if (!createFile(GUIDpath, UID))
                 return "RGS NOK\n";
 
-            printf("UID=%s: subscribed group: %s - \"%s\"\n", UID, GID, GName);
+            if (v_mode)
+                printf("UID=%s: subscribed group: %s - \"%s\"\n", UID, GID, GName);
             return "RGS OK\n";
         }
         else{
@@ -577,7 +583,8 @@ char *subscribeGroupS(char *input){
             if (!createDir(GRPpath))
                 return "RGS NOK\n";
 
-            printf("UID=%s: new group: %s - \"%s\"\n", UID, newGID, GName);
+            if (v_mode)
+                printf("UID=%s: new group: %s - \"%s\"\n", UID, newGID, GName);
             sprintf(out, "RGS NEW %s\n", newGID);
             return out;
         }
@@ -646,7 +653,8 @@ char *unsubscribeGroupS(char *input){
             return "RGU NOK\n";
         }
 
-        printf("UID=%s: unsubscribed group: %s\n", UID, GID);
+        if (v_mode)
+            printf("UID=%s: unsubscribed group: %s\n", UID, GID);
         return "RGU OK\n";
     }
     return "RGU NOK\n";
@@ -855,18 +863,24 @@ void postMessageS(int connfd){
     }
     temp[0] = '\0';
 
-    //get textSize
+    readTCP(connfd, 1, temp);
     while(temp[0] != ' '){
-        if (i > 2){
-            break;
+        if(i >= 3){
+            sprintf(out, "RPT NOK\n");
+            writeTCP(connfd,strlen(out), out);
+            return;
         }
-        readTCP(connfd, 1, temp);
-        //verification here
         textSizeC[i] = temp[0];
         i++;
+        readTCP(connfd, 1, temp);
     }
     textSizeC[i] = '\0';
     textSize = atoi(textSizeC);
+    if(textSize > 240){
+        sprintf(out, "RPT NOK\n");
+        writeTCP(connfd,strlen(out), out);
+        return;
+    }
 
     //get text
     readTCP(connfd, textSize, text);
@@ -940,7 +954,6 @@ void postMessageS(int connfd){
                     }
                     //open MSG folder
                     sprintf(MSGpath, "GROUPS/%s/MSG",GID);
-                    //printf("msg path: %s\n",MSGpath);
                     d_MSG = opendir(MSGpath);
                     if (d_MSG){
                         //get next MID
@@ -1028,11 +1041,10 @@ void postMessageS(int connfd){
                                     return;
                                 }
 
-                                buffer[0] = '\0';
-
                                 nleft = nbytes;
                                 while(nleft>0){
                                     if (nleft > 512){
+                                        buffer[0] = '\0';
                                         nread = readTCP(connfd, 512, buffer);
                                         buffer[nread] = '\0';
                                         if(nread==-1){
@@ -1080,11 +1092,13 @@ void postMessageS(int connfd){
             }
         }
         closedir(d_GRP);
-        if (withFile){
-            printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
-        }
-        else{
-            printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
+        if (v_mode){
+            if (withFile){
+                printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
+            }
+            else{
+                printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
+            }
         }
         sprintf(out, "RPT %s\n",MID_C);
         writeTCP(connfd, strlen(out), out);
@@ -1195,12 +1209,14 @@ void retrieveMessagesS(char *input, int connfd){
     }
 
     if (n_msgs == 0){
-        printf("UID=%s: retrieve group %s, no messages to retrieve\n", UID, GID);
+        if (v_mode)
+            printf("UID=%s: retrieve group %s, no messages to retrieve\n", UID, GID);
         writeTCP(connfd, 11, "RRT EOF 0\n");
         return;
     }
 
-    printf("UID=%s: retrieve group %s, %d message(s):\n", UID, GID, n_msgs);
+    if (v_mode)
+        printf("UID=%s: retrieve group %s, %d message(s):\n", UID, GID, n_msgs);
 
     char *p = out;
     size_t offset = sprintf(p, "RRT OK %d", n_msgs);
@@ -1296,11 +1312,13 @@ void retrieveMessagesS(char *input, int connfd){
                         }
                     }
                 }
-                if (withFile){
-                    printf("%s - %s \"%s\" %s\n", MID_tmp, UID, text, FName);
-                }
-                else{
-                    printf("%s - %s \"%s\"\n", MID_tmp, UID, text);
+                if (v_mode){
+                    if (withFile){
+                        printf("%s - %s \"%s\" %s\n", MID_tmp, UID, text, FName);
+                    }
+                    else{
+                        printf("%s - %s \"%s\"\n", MID_tmp, UID, text);
+                    }
                 }
                 n_msgs--;
             }

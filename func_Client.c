@@ -501,6 +501,10 @@ void postMessage(char *input){
         return;
     }
     while(input[i] != '\n'){
+        if (i > 241){
+            printf("Error: text too long\n");
+            return;
+        }
         if(input[i] == '"'){
             if(input[i+1] == ' '){
                 duasAspas = 1;
