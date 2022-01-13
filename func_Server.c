@@ -225,13 +225,15 @@ char* registerUserS(char *input){
     else{
         char user_password[30];
         if (!createDir(user_dirname)){
-            printf("Register error: Could not create dir\n");
+            if (v_mode)
+                printf("Register error: Could not create dir\n");
             return "RRG NOK\n";
         }
 
         sprintf(user_password,"USERS/%s/%s_pass.txt",UID,UID);
         if (!createFile(user_password, password)){
-            printf("Register error: Could not create pass .txt\n");
+            if (v_mode)
+                printf("Register error: Could not create pass .txt\n");
             return "RRG NOK\n";
         }
         
@@ -343,7 +345,8 @@ char* loginUserS(char *input){
         }
     }
     else{
-        printf("Login error: UID=%s not registered", UID);
+        if (v_mode)
+            printf("Login error: UID=%s not registered", UID);
         sprintf(out,"RLO NOK\n");
     }
     return out;
@@ -378,7 +381,8 @@ char *logoutUserS(char* input){
         fclose(pass_txt);
     }
     else{
-        printf("Logout error: User not registered");
+        if (v_mode)
+            printf("Logout error: User not registered");
         return "ROU NOK\n";
     }
 
@@ -567,6 +571,7 @@ char *subscribeGroupS(char *input){
                     max = nextGID;
             }
             closedir(d_GRP);
+
             max++;
             
             if (max == 99){
@@ -574,6 +579,29 @@ char *subscribeGroupS(char *input){
                     printf("Subscribe error: Maximum number of groups exceeded\n");
                 return "RGS E_FULL\n";
             }
+
+            int gid = 1;
+            while (gid < max){
+                char GNamepath[30], GID_tmp[15], real_gname[26];
+                if (gid < 10)
+                    sprintf(GID_tmp, "0%d", gid);
+                else
+                    sprintf(GID_tmp, "%d", gid);
+
+                sprintf(GNamepath, "GROUPS/%s/%s_name.txt", GID_tmp);
+                FILE *fp = fopen(GNamepath, "r");
+                if (fp){
+                    fscanf(fp, "%s", real_gname);
+                    fclose(fp);
+                    if (strcmp(GName, real_gname) == 0)
+                }
+                else{
+                    if (v_mode)
+                        printf("Error: cannot open Group name file\n");
+                    return "RGS NOK\n";
+                }
+            }
+            
             char newGID[8];
             if (max < 10)
                 sprintf(newGID, "0%d", max);

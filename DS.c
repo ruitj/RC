@@ -24,6 +24,21 @@ int max(int x, int y){
         return y;
 }
 
+int TimerON_S(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    tmout.tv_sec=5; /* Wait for 5 sec for a reply from server. */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+    
+int TimerOFF_S(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+
 int receivecmd(){
     int listenfd, connfd, udpfd,nready, maxfdp1;
     char buffer[MAX_OUT_SIZE];
@@ -79,7 +94,11 @@ int receivecmd(){
                 connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
                 if (connfd != -1){
                     bzero(buffer, sizeof(buffer));
+                    if (TimerON_S(connfd) < 0)
+                        continue;
                     if(read(connfd,input,4)>0){
+                        if (TimerOFF_S(connfd) < 0)
+                            continue;
                         if (verbose_mode)
                             printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                         processInputTCP(connfd,input);
@@ -91,7 +110,11 @@ int receivecmd(){
             if (FD_ISSET(udpfd, &rset)) {
                 len = sizeof(cliaddr);
                 bzero(buffer, sizeof(buffer));
+                if (TimerON_S(udpfd) < 0)
+                    exit(1);
                 if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
+                    if (TimerOFF_S(udpfd) < 0)
+                        continue;
                     if (verbose_mode)
                         printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                     out = processInput(buffer);
