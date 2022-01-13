@@ -1153,20 +1153,21 @@ void postMessageS(int connfd){
                     }
                     closedir(d_GID);
                 }
+                if (v_mode){
+                    if (withFile){
+                        printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
+                    }
+                    else{
+                        printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
+                    }
+                }
+                sprintf(out, "RPT %s\n",MID_C);
+                writeTCP(connfd, strlen(out), out);
+                closedir(d_GRP);
+                return;
             }
         }
         closedir(d_GRP);
-        if (v_mode){
-            if (withFile){
-                printf("UID=%s: post group: %s - \"%s\" %s\n", UID, GID, text, FName);
-            }
-            else{
-                printf("UID=%s: post group: %s - \"%s\"\n", UID, GID, text);
-            }
-        }
-        sprintf(out, "RPT %s\n",MID_C);
-        writeTCP(connfd, strlen(out), out);
-        return;
     }
     sprintf(out, "RPT NOK\n");
     writeTCP(connfd,strlen(out), out);
