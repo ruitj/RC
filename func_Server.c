@@ -1326,7 +1326,6 @@ void retrieveMessagesS(char *input, int connfd){
                     fseek(fp, 0, SEEK_END);
                     int filesize = ftell(fp);
                     fseek(fp,0,SEEK_SET);
-                    char text[MAX_TEXT_SIZE];
                     if (!fread(text, 1, filesize, fp))
                         return;
                     text[filesize] = '\0';
