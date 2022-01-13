@@ -582,24 +582,31 @@ char *subscribeGroupS(char *input){
 
             int gid = 1;
             while (gid < max){
-                char GNamepath[30], GID_tmp[15], real_gname[26];
+                char GNamepath[40], GID_tmp[10], real_gname[26];
                 if (gid < 10)
                     sprintf(GID_tmp, "0%d", gid);
                 else
                     sprintf(GID_tmp, "%d", gid);
 
-                sprintf(GNamepath, "GROUPS/%s/%s_name.txt", GID_tmp);
+                sprintf(GNamepath, "GROUPS/%s/%s_name.txt", GID_tmp, GID_tmp);
                 FILE *fp = fopen(GNamepath, "r");
                 if (fp){
-                    fscanf(fp, "%s", real_gname);
+                    if (!fscanf(fp, "%s", real_gname)){
+                        return "RGS NOK\n";
+                    }
                     fclose(fp);
-                    if (strcmp(GName, real_gname) == 0)
+                    if (strcmp(GName, real_gname) == 0){
+                        if (v_mode)
+                            printf("Subscribe error: Group name already being used\n");
+                        return "RGS E_GRP\n";
+                    }
                 }
                 else{
                     if (v_mode)
                         printf("Error: cannot open Group name file\n");
                     return "RGS NOK\n";
                 }
+                gid++;
             }
             
             char newGID[8];

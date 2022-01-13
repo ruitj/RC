@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "Client.h"
+#include "UDP_Client.h"
 
 int fd_udp, errcde_udp;
 ssize_t n_udp;
@@ -16,9 +17,23 @@ struct addrinfo hints_udp, *res_udp;
 struct sockaddr_in addr_udp;
 char buffer_udp[MAX_OUTUDP_SIZE];
 
+int TimerON_UDP(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    tmout.tv_sec=5; /* Wait for 5 sec for a reply from server. */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+    
+int TimerOFF_UDP(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+
 void initUDP(char hostName[], char port[]){
     fd_udp=socket(AF_INET, SOCK_DGRAM, 0);
-    //printf("%d\n",fd_udp);
     if (fd_udp==-1) exit(1);
 
     memset(&hints_udp, 0, sizeof hints_udp);

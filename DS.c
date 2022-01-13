@@ -94,11 +94,11 @@ int receivecmd(){
                 connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &len);
                 if (connfd != -1){
                     bzero(buffer, sizeof(buffer));
-                    if (TimerON_S(connfd) < 0)
-                        continue;
+                    /*if (TimerON_S(connfd) < 0)
+                        continue;*/
                     if(read(connfd,input,4)>0){
-                        if (TimerOFF_S(connfd) < 0)
-                            continue;
+                        /*if (TimerOFF_S(connfd) < 0)
+                            continue;*/
                         if (verbose_mode)
                             printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                         processInputTCP(connfd,input);
@@ -110,11 +110,11 @@ int receivecmd(){
             if (FD_ISSET(udpfd, &rset)) {
                 len = sizeof(cliaddr);
                 bzero(buffer, sizeof(buffer));
-                if (TimerON_S(udpfd) < 0)
-                    exit(1);
+                /*if (TimerON_S(udpfd) < 0)
+                    exit(1);*/
                 if(recvfrom(udpfd, buffer, sizeof(buffer), 0,(struct sockaddr*)&cliaddr, &len)){
-                    if (TimerOFF_S(udpfd) < 0)
-                        continue;
+                    /*if (TimerOFF_S(udpfd) < 0)
+                        continue;*/
                     if (verbose_mode)
                         printf("Request from IP: %s; port: %d\n", inet_ntoa(cliaddr.sin_addr), (int) ntohs(cliaddr.sin_port));
                     out = processInput(buffer);

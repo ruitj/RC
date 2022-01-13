@@ -9,10 +9,26 @@
 #include <signal.h>
 #include <stdio.h>
 #include "Client.h"
+#include "TCP_Client.h"
 
 int fd_tcp, errcode_tcp;
 ssize_t n_tcp;
 struct addrinfo hints_tcp, *res_tcp;
+
+int TimerON_TCP(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    tmout.tv_sec=5; /* Wait for 5 sec for a reply from server. */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+    
+int TimerOFF_TCP(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
 
 void initTCP(char hostName[], char port[]){
     fd_tcp=socket(AF_INET, SOCK_STREAM, 0);
