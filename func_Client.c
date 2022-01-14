@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 
 char savedUID[MAX_UID_SIZE], savedPass[MAX_PASS_SIZE];
 char savedGID[MAX_GID_SIZE];
@@ -65,6 +68,7 @@ void registerUser(char *input){
     }
 
     sprintf(in, "REG %s", input);
+
     out = sendUDP(in);
 
     if (strcmp(out, "RRG OK\n") == 0){
@@ -444,7 +448,10 @@ void listUsers_GID(){
     
     connectTCP();
     writeTCP(in, strlen(in));
-    readTCP(7, buffer_tcp);
+    if(readTCP(7, buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    }
 
     if (strcmp(buffer_tcp, "RUL NOK") == 0){
         printf("Error: invalid group ID\n");
@@ -461,10 +468,16 @@ void listUsers_GID(){
 
     char GName[MAX_GNAME_SIZE];
     int j;
-    readTCP(1, buffer_tcp);
+    if(readTCP(1, buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    }
     for (j = 0; buffer_tcp[0] != ' '; j++){
         GName[j] = buffer_tcp[0];
-        readTCP(1, buffer_tcp);
+        if(readTCP(1, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
     }
     GName[j] = '\0';
 
@@ -473,6 +486,10 @@ void listUsers_GID(){
 
     while (1){
         int nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
+        if(nread<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
         printf("%s", buffer_tcp);
         if (buffer_tcp[nread-1] == '\n')
             break;
@@ -584,7 +601,10 @@ void postMessage(char *input){
         }
         fclose(fptr);
     }
-    readTCP(9,buffer_tcp);
+    if(readTCP(9,buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    }
 
     if (strcmp(buffer_tcp, "RPT NOK\n") == 0){
         printf("Error: invalid post\n");
@@ -633,7 +653,10 @@ void retrieveMessages(char *input){
 
     connectTCP();
     writeTCP(in, strlen(in));
-    readTCP(7, buffer_tcp);
+    if(readTCP(7, buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    }
 
     if (strcmp(buffer_tcp, "RRT NOK") == 0){
         printf("invalid credentials\n");
@@ -654,10 +677,16 @@ void retrieveMessages(char *input){
 
     char msgs[5];
     int i;
-    readTCP(1, buffer_tcp); // reads number of messages retrieved
+    if(readTCP(1, buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    } // reads number of messages retrieved
     for (i = 0; isdigit(buffer_tcp[0]); i++){
         msgs[i] = buffer_tcp[0];
-        readTCP(1, buffer_tcp);
+        if(readTCP(1, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
     }
     msgs[i] = '\0';
     
@@ -666,50 +695,89 @@ void retrieveMessages(char *input){
     int n_read = 0; // msgs already read
     int j;
 
-    readTCP(1, buffer_tcp);
+    if(readTCP(1, buffer_tcp)<0){
+        printf("Error: timeout exceeded\n");
+        return;
+    }
     while (n_read < n_msgs){
         char MID[MAX_MID_SIZE], TSize[4], text[MAX_TEXT_SIZE];
 
         for (j = 0; isdigit(buffer_tcp[0]); j++){
             MID[j] = buffer_tcp[0];
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
         }
         MID[j] = '\0';
 
-        readTCP(6, buffer_tcp); // reads UID
+        if(readTCP(6, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        } // reads UID
 
-        readTCP(1, buffer_tcp);
+        if(readTCP(1, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
         for (j = 0; isdigit(buffer_tcp[0]); j++){
             TSize[j] = buffer_tcp[0];
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
         }
         TSize[j] = '\0';
 
         int size = atoi(TSize);
-        readTCP(size, buffer_tcp);
+        if(readTCP(size, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
         strcpy(text, buffer_tcp);
         text[size] = '\0';
 
         printf("%s - \"%s\"", MID, text);
 
-        readTCP(1, buffer_tcp); // reads space
-        readTCP(1, buffer_tcp);
+        if(readTCP(1, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        } // reads space
+        if(readTCP(1, buffer_tcp)<0){
+            printf("Error: timeout exceeded\n");
+            return;
+        }
         
         if (buffer_tcp[0] == '/'){
-            readTCP(1, buffer_tcp); // reads space
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            } // reads space
             char FName[MAX_FNAME_SIZE], FSize[11];
 
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
             for (j = 0; buffer_tcp[0] != ' '; j++){
                 FName[j] = buffer_tcp[0];
-                readTCP(1, buffer_tcp);
+                if(readTCP(1, buffer_tcp)<0){
+                    printf("Error: timeout exceeded\n");
+                    return;
+                }
             }
             FName[j] = '\0';
 
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
             for (j = 0; buffer_tcp[0] != ' '; j++){
                 FSize[j] = buffer_tcp[0];
-                readTCP(1, buffer_tcp);
+                if(readTCP(1, buffer_tcp)<0){
+                    printf("Error: timeout exceeded\n");
+                    return;
+                }
             }
             FSize[j] = '\0';
 
@@ -717,10 +785,20 @@ void retrieveMessages(char *input){
             FILE *fp = fopen(FName, "wb");
             while (size > 0){
                 int nread;
-                if (size > MAX_OUTTCP_SIZE)
+                if (size > MAX_OUTTCP_SIZE){
                     nread = readTCP(MAX_OUTTCP_SIZE, buffer_tcp);
-                else
+                    if(nread<0){
+                        printf("Error: timeout exceeded\n");
+                        return;
+                    }
+                }
+                else{
                     nread = readTCP(size, buffer_tcp);
+                    if(nread<0){
+                        printf("Error: timeout exceeded\n");
+                        return;
+                    }
+                }
                 if (!fwrite(buffer_tcp, 1, nread, fp)){
                     printf("Error: unable to store file\n");
                     exit(1);
@@ -729,10 +807,16 @@ void retrieveMessages(char *input){
             }
             fclose(fp);
 
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
             printf("; file stored: %s", FName);
 
-            readTCP(1, buffer_tcp);
+            if(readTCP(1, buffer_tcp)<0){
+                printf("Error: timeout exceeded\n");
+                return;
+            }
 
         }
         printf("\n");

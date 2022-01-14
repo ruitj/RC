@@ -8,6 +8,9 @@
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 #include "Client.h"
 #include "TCP_Client.h"
 
@@ -57,8 +60,26 @@ int writeTCP(char *msg, int n_bytes){
 }
 
 int readTCP(int n_bytes, char *content){
+    if (TimerON_TCP(fd_tcp) < 0){
+        printf("Error: setsockpt failed\n");
+        return -1;
+    }
+    
     n_tcp=read(fd_tcp, content, n_bytes);
-    if(n_tcp==-1) exit(1);
+    if(n_tcp<1){
+        if(errno == EWOULDBLOCK){
+            printf("Error: timeout exceeded\n");
+        }
+        else if(errno == EAGAIN){
+            printf("Error: data wasn't received correctly\n");
+        }
+        return -1;
+    }
+
+    if (TimerOFF_TCP(fd_tcp) < 0){
+        printf("Error: setsockpt failed\n");
+        return -1;
+    }
     content[n_tcp] = '\0';
     return n_tcp;
 }

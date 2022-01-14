@@ -5,8 +5,15 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <math.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 #include "func_Server.h"
 
 char out[MAX_OUT_SIZE];
@@ -86,13 +93,42 @@ void initSession(int verbose_mode){
         v_mode = 1;
 }
 
+int TimerON_S(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    tmout.tv_sec=5; /* Wait for 5 sec for a reply from server. */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+    
+int TimerOFF_S(int sd){
+    struct timeval tmout;
+    
+    memset((char *)&tmout,0,sizeof(tmout)); /* clear time structure */
+    return(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tmout,sizeof(struct timeval)));
+}
+
 int readTCP(int connfd, int n_bytes, char *content){
     ssize_t nread;
 
+    if (TimerON_S(connfd) < 0){
+        printf("Error: setsockpt failed\n");
+        return -1;
+    }
     nread=read(connfd, content, n_bytes);
     if(nread<1){
-        exit(1);
-    } 
+        if(errno == EWOULDBLOCK){
+            printf("Error: timeout exceeded\n");
+        }
+        else if(errno == EAGAIN){
+            printf("Error: data wasn't received correctly\n");
+        }
+        return -1;
+    }
+    if (TimerOFF_S(connfd) < 0){
+        printf("Error: setsockpt failed\n");
+        return -1;
+    }
     content[nread] = '\0';
     return nread;
 }
@@ -887,7 +923,11 @@ void postMessageS(int connfd){
     int i=0, textSize, withFile = 0, fileSize=0;
 
     //get UID
-    readTCP(connfd, 5, UID);
+    if(readTCP(connfd, 5, UID)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
+    
     UID[5] = '\0';
 
     if(!validUID(UID)){
@@ -897,7 +937,10 @@ void postMessageS(int connfd){
     }
 
     //get whitespace
-    readTCP(connfd,1,temp);
+    if(readTCP(connfd,1,temp)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
         writeTCP(connfd,strlen(out), out);
@@ -906,7 +949,10 @@ void postMessageS(int connfd){
     temp[0] = '\0';
 
     //get GID
-    readTCP(connfd, 2, GID);
+    if(readTCP(connfd, 2, GID)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
 
     if(!validGID(GID)){
         sprintf(out, "RPT NOK\n");
@@ -915,7 +961,10 @@ void postMessageS(int connfd){
     }
     
     //get whitespace
-    readTCP(connfd,1,temp);
+    if(readTCP(connfd,1,temp)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
     if(temp[0] != ' '){
         sprintf(out, "RPT NOK\n");
         writeTCP(connfd,strlen(out), out);
@@ -923,7 +972,10 @@ void postMessageS(int connfd){
     }
     temp[0] = '\0';
 
-    readTCP(connfd, 1, temp);
+    if(readTCP(connfd, 1, temp)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
     while(temp[0] != ' '){
         if(i >= 3){
             sprintf(out, "RPT NOK\n");
@@ -932,7 +984,10 @@ void postMessageS(int connfd){
         }
         textSizeC[i] = temp[0];
         i++;
-        readTCP(connfd, 1, temp);
+        if(readTCP(connfd, 1, temp)<0){
+            writeTCP(connfd, 5, "ERR\n");
+            return;
+        }
     }
     textSizeC[i] = '\0';
     textSize = atoi(textSizeC);
@@ -943,11 +998,17 @@ void postMessageS(int connfd){
     }
 
     //get text
-    readTCP(connfd, textSize, text);
+    if(readTCP(connfd, textSize, text)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
     text[textSize] = '\0';
     
     //get whitespace to see if it has a file or not
-    readTCP(connfd, 1, temp);
+    if(readTCP(connfd, 1, temp)<0){
+        writeTCP(connfd, 5, "ERR\n");
+        return;
+    }
     if (temp[0] == ' '){
         withFile=1;
     }
@@ -956,7 +1017,10 @@ void postMessageS(int connfd){
     if(withFile){
         //get FName
         i=0;
-        readTCP(connfd, 1, temp);
+        if(readTCP(connfd, 1, temp)<0){
+            writeTCP(connfd, 5, "ERR\n");
+            return;
+        }
         while(temp[0] != ' '){
             if (i > 23){
                 sprintf(out, "RPT NOK\n");
@@ -965,7 +1029,10 @@ void postMessageS(int connfd){
             }
             FName[i] = temp[0];
             i++;
-            readTCP(connfd, 1, temp);
+            if(readTCP(connfd, 1, temp)<0){
+                writeTCP(connfd, 5, "ERR\n");
+                return;
+            }
         }
         FName[i] = '\0';
 
@@ -984,7 +1051,10 @@ void postMessageS(int connfd){
             else{
                 fileSize = fileSize*10 + atoi(temp);
             }
-            readTCP(connfd, 1, temp);
+            if(readTCP(connfd, 1, temp)<0){
+                writeTCP(connfd, 5, "ERR\n");
+                return;
+            }
             i++;
         }
     }
@@ -1116,7 +1186,7 @@ void postMessageS(int connfd){
                                             closedir(d_MSG);
                                             closedir(d_GID);
                                             closedir(d_GRP);
-                                            sprintf(out, "RPT NOK\n");
+                                            sprintf(out, "ERR\n");
                                             writeTCP(connfd,strlen(out), out);
                                             return;
                                         }
@@ -1136,7 +1206,7 @@ void postMessageS(int connfd){
                                             closedir(d_MSG);
                                             closedir(d_GID);
                                             closedir(d_GRP);
-                                            sprintf(out, "RPT NOK\n");
+                                            sprintf(out, "ERR\n");
                                             writeTCP(connfd,strlen(out), out);
                                             return;
                                         }
@@ -1327,6 +1397,7 @@ void retrieveMessagesS(char *input, int connfd){
                     fseek(fp, 0, SEEK_END);
                     int filesize = ftell(fp);
                     fseek(fp,0,SEEK_SET);
+                    char text[MAX_TEXT_SIZE];
                     if (!fread(text, 1, filesize, fp))
                         return;
                     text[filesize] = '\0';

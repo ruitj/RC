@@ -7,6 +7,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <errno.h>
 #include "Client.h"
 #include "UDP_Client.h"
 
@@ -50,9 +53,27 @@ char *sendUDP(char *msg){
     if (n_udp==-1) exit(1);
     addrlen_udp=sizeof(addr_udp);
     
+    if (TimerON_UDP(fd_udp) < 0){
+        printf("Error: setsockpt failed\n");
+        return "ERR\n";
+    }
+
     n_udp=recvfrom(fd_udp, (char *)buffer_udp, MAX_OUTUDP_SIZE-1, 0, (struct sockaddr*)&addr_udp, &addrlen_udp);
+    if (n_udp==-1){
+        if(errno == EWOULDBLOCK){
+            printf("Error: timeout exceeded\n");
+        }
+        else if(errno == EAGAIN){
+            printf("Error: data wasn't received correctly\n");
+        }
+        return "ERR\n";
+    } 
+
+    if (TimerOFF_UDP(fd_udp) < 0){
+        printf("Error: setsockpt failed\n");
+        return "ERR\n";
+    }
     
-    if (n_udp==-1) exit(1);
     buffer_udp[n_udp] = '\0';
     return buffer_udp;
 }

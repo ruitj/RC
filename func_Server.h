@@ -16,3 +16,5 @@ char *showMyGroupsS(char *input);
 void listUsers_GIDS(char *input,int connfd);
 void postMessageS(int connfd);
 void retrieveMessagesS(char *input, int connfd);
+int TimerON_S(int sd);
+int TimerOFF_S(int sd);
